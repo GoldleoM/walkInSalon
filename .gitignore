@@ -1,0 +1,95 @@
+*.hprof
+# Flutter build outputs
+/build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+.dart_tool/
+
+# Android build outputs
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/key.properties
+
+# iOS build outputs (if applicable)
+ios/Flutter/.last_build_id
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Generated.xcconfig
+ios/.symlinks/
+ios/build/
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/Podfile.lock
+
+# macOS
+macos/Flutter/ephemeral/
+macos/Pods/
+macos/build/
+macos/Runner.xcworkspace/
+macos/Podfile.lock
+
+# Windows
+windows/flutter/ephemeral/
+windows/build/
+
+# Linux
+linux/flutter/ephemeral/
+linux/build/
+
+# Web
+web/.dart_tool/
+web/build/
+
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+.gradle/
+local.properties
+
+# VS Code
+.vscode/
+
+# Xcode user data
+xcuserdata/
+
+# Temporary files
+*.log
+*.tmp
+*.swp
+*.lock
+*.DS_Store
+Thumbs.db
+ehthumbs.db
+*.orig
+
+# Generated Dart files
+lib/generated_plugin_registrant.dart
+lib/config/supabase_config.dart
+
+# Firebase-related
+google-services.json
+GoogleService-Info.plist
+
+# Environment or credentials
+.env
+.env.*
+
+# Symbolic link folders (can get huge)
+symlink/
+links/
+
+# Coverage / test artifacts
+coverage/
+test_results/
+
+# Others you may not want to commit
+*.keystore
+*.jks
+*.bak
