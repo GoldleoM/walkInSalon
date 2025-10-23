@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:walkinsalonapp/widgets/dialogs/settings/location_picker_dialog.dart';
 
@@ -45,8 +46,11 @@ class SalonDetailsForm extends StatelessWidget {
           icon: const Icon(Icons.location_on),
           label: const Text('Select Location on Map'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF023047),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            backgroundColor: AppColors.primary,
+            padding: EdgeInsets.symmetric(
+              horizontal: AppConstants.padding,
+              vertical: AppConstants.padding * 0.75,
+            ),
           ),
           onPressed: () async {
             print("Opening location picker dialog..."); // debug

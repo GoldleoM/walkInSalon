@@ -1,7 +1,8 @@
 import 'dart:typed_data';
+import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'dart:io';
+import 'package:walkinsalonapp/core/app_config.dart';
 
 class CoverImagePicker extends StatelessWidget {
   final Uint8List? webCoverImage;
@@ -17,6 +18,7 @@ class CoverImagePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     DecorationImage? coverDecoration;
 
     if (kIsWeb && webCoverImage != null) {
@@ -33,12 +35,37 @@ class CoverImagePicker extends StatelessWidget {
         height: 150,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: Colors.grey[200],
+          color: coverDecoration == null
+              ? (isDark
+                  ? Colors.white.withOpacity(0.05)
+                  : AppColors.surface.withOpacity(0.5))
+              : Colors.transparent,
           image: coverDecoration,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppConstants.borderRadius),
+          border: Border.all(
+            color: isDark
+                ? AppColors.darkBorder
+                : AppColors.border.withOpacity(0.8),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.25 : 0.1),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: coverDecoration == null
-            ? const Center(child: Text("Tap to add cover photo"))
+            ? Center(
+                child: Text(
+                  "Tap to add cover photo",
+                  style: AppConfig.text.textTheme.bodyMedium?.copyWith(
+                    color: isDark
+                        ? AppColors.darkTextSecondary
+                        : AppColors.textSecondary,
+                  ),
+                ),
+              )
             : null,
       ),
     );

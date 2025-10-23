@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -15,7 +16,7 @@ class LogoutButton extends StatelessWidget {
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
             child: const Text("Logout"),
           ),
         ],
@@ -29,12 +30,12 @@ class LogoutButton extends StatelessWidget {
         if (context.mounted) {
           Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Logged out successfully."), backgroundColor: Colors.green),
+            const SnackBar(content: Text("Logged out successfully."), backgroundColor: AppColors.success),
           );
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Logout failed: $e"), backgroundColor: Colors.red),
+          SnackBar(content: Text("Logout failed: $e"), backgroundColor: AppColors.error),
         );
       }
     }
@@ -47,8 +48,11 @@ class LogoutButton extends StatelessWidget {
       icon: const Icon(Icons.logout),
       label: const Text("Logout"),
       style: ElevatedButton.styleFrom(
-        backgroundColor: Colors.redAccent,
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        backgroundColor: AppColors.error,
+        padding: EdgeInsets.symmetric(
+          horizontal: AppConstants.padding,
+          vertical: AppConstants.padding * 0.75,
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:walkinsalonapp/widgets/reviews/review_card.dart';
 import 'package:walkinsalonapp/widgets/dialogs/reviews/reply_dialog.dart';
 
@@ -81,22 +82,37 @@ class _ReviewsPageState extends State<ReviewsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: colors.surface,
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: colors.surface,
       appBar: AppBar(
-        title: const Text("Customer Reviews"),
-        backgroundColor: const Color(0xFF023047),
+        title: Text(
+          "Customer Reviews",
+          style: textTheme.titleLarge?.copyWith(color: Colors.white),
+        ),
+        backgroundColor: AppColors.primary,
+        elevation: 2,
       ),
       body: _reviews.isEmpty
-          ? const Center(child: Text("No reviews yet"))
+          ? Center(
+              child: Text(
+                "No reviews yet",
+                style: textTheme.bodyLarge?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            )
           : ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppConstants.padding),
               itemCount: _reviews.length,
               itemBuilder: (context, index) {
                 final reviewDoc = _reviews[index];

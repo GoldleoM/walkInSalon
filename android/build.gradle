@@ -1,7 +1,0 @@
-buildscript {
-    ext.kotlin_version = '1.9.25'  // or latest stable
-    repositories {
-        google()
-        mavenCentral()
-    }
-}

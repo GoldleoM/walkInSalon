@@ -70,7 +70,6 @@ ehthumbs.db
 *.orig
 
 # Generated Dart files
-lib/generated_plugin_registrant.dart
 lib/config/supabase_config.dart
 
 # Firebase-related

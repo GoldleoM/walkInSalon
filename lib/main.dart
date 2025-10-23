@@ -1,36 +1,62 @@
 import 'package:flutter/material.dart';
-import 'package:walkinsalonapp/config/app_initializer.dart';
-import 'auth/login/auth_wrapper.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:responsive_framework/responsive_framework.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-void main() async {
+// 🧱 Core + Config
+import 'core/app_config.dart';
+import 'config/firebase_options.dart';
+import 'config/supabase_config.dart';
+
+// 🧭 Entry screens
+import 'package:walkinsalonapp/screens/business/widgets/splash_screen.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AppInitializer.initialize();
-  runApp(const MyApp());
+
+  // 🔥 Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
+
+  // 🪣 Supabase
+  await Supabase.initialize(
+    url: supabaseUrl,
+    anonKey: supabaseAnonKey,
+  );
+
+  // Optional warm-up delay (for splash smoothness)
+  await Future.delayed(const Duration(milliseconds: 200));
+
+  runApp(const WalkInSalonApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class WalkInSalonApp extends StatelessWidget {
+  const WalkInSalonApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Walk-In Salon',
+      title: AppConfig.appName,
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-        useMaterial3: true,
+
+      // 🎨 Unified AppConfig theming
+      theme: AppConfig.themeLight,
+      themeMode: ThemeMode.system,
+
+      // 📱 Responsive Framework
+      builder: (context, widget) => ResponsiveBreakpoints.builder(
+        child: widget!,
+        breakpoints: const [
+          Breakpoint(start: 0, end: 450, name: MOBILE),
+          Breakpoint(start: 451, end: 800, name: TABLET),
+          Breakpoint(start: 801, end: 1200, name: DESKTOP),
+          Breakpoint(start: 1201, end: double.infinity, name: '4K'),
+        ],
       ),
-      home: const AuthWrapper(),
-      builder: (context, child) => Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFFE3F2FD), Color(0xFFE8F5E9)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: child,
-      ),
+
+      // 🧭 Initial route (splash → auth)
+      home: const SplashScreen(),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:walkinsalonapp/core/app_config.dart';
 
 class BarberCard extends StatelessWidget {
   final Map<String, dynamic> barber;
@@ -20,37 +21,39 @@ class BarberCard extends StatelessWidget {
         ? (barber['specialties'] as List).join(', ')
         : "No specialty";
 
-    return Card(
-      elevation: 2,
+    return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      decoration: AppDecorations.glassPanel(context),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: const Color(0xFF023047),
+          backgroundColor: AppColors.primary,
           backgroundImage: barber["profileImage"] != null
               ? NetworkImage(barber["profileImage"])
               : null,
           child: barber["profileImage"] == null
               ? Text(
                   (barber["name"] ?? "?")[0].toUpperCase(),
-                  style: const TextStyle(color: Colors.white),
+                  style: TextStyle(color: AppColors.darkTextPrimary),
                 )
               : null,
         ),
         title: Text(
           barber["name"] ?? "Unnamed Barber",
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: Theme.of(context)
+              .textTheme
+              .titleMedium
+              ?.copyWith(fontWeight: FontWeight.bold),
         ),
-        subtitle: Text(specialties),
+        subtitle: Text(specialties, style: Theme.of(context).textTheme.bodyMedium),
         trailing: Wrap(
           spacing: 8,
           children: [
-            IconButton(icon: const Icon(Icons.edit, color: Colors.blueAccent), onPressed: onEdit),
-            IconButton(icon: const Icon(Icons.delete, color: Colors.redAccent), onPressed: onDelete),
+            IconButton(icon: const Icon(Icons.edit, color: AppColors.secondary), onPressed: onEdit),
+            IconButton(icon: const Icon(Icons.delete, color: AppColors.error), onPressed: onDelete),
             Switch(
               value: barber["isAvailable"] ?? true,
               onChanged: onToggleAvailability,
-              activeThumbColor: Colors.green,
+              activeThumbColor: AppColors.success,
             ),
           ],
         ),

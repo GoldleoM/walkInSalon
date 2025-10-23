@@ -52,7 +52,7 @@ class _EditAppointmentDialogState extends State<EditAppointmentDialog> {
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
-            value: status,
+            initialValue: status,
             items: ["Pending", "Confirmed", "Cancelled"]
                 .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                 .toList(),

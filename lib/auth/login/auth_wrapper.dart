@@ -1,58 +1,112 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../pages/dashboard_buisness.dart';
-import 'login_page.dart';
 import 'package:flutter/material.dart';
+import 'package:walkinsalonapp/core/app_config.dart';
+import 'package:walkinsalonapp/pages/buisness_details_page.dart';
+import 'package:walkinsalonapp/pages/business_dashboard_page.dart';
 import 'package:walkinsalonapp/pages/placeholder_dashboard.dart';
+import 'login_page.dart';
 
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
-  Future<Widget> _getLandingPage() async {
-    final user = FirebaseAuth.instance.currentUser;
+  Future<Widget> _getRoleBasedPage(User user) async {
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
 
-    if (user == null) {
-      return const LoginPage();
-    }
+      if (!snapshot.exists) return const LoginPage();
 
-    // Check Firestore role
-    final snapshot =
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final role = snapshot.data()?['role'];
 
-    if (!snapshot.exists) {
-      return const LoginPage();
-    }
-
-    final role = snapshot.data()?['role'];
-
-    if (role == 'business') {
-      return const BusinessDashboardPage();
-    } else if (role == 'customer') {
-      return const PlaceholderDashboard(title: 'Customer Dashboard');
-    } else {
+      if (role == 'business_pending') {
+        return const BusinessDetailsPage();
+      } else if (role == 'business') {
+        return const BusinessDashboardPage();
+      } else if (role == 'customer') {
+        return const PlaceholderDashboard(title: 'Customer Dashboard');
+      } else {
+        return const LoginPage();
+      }
+    } catch (e) {
+      debugPrint('AuthWrapper error: $e');
       return const LoginPage();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Widget>(
-      future: _getLandingPage(),
+    final colors = Theme.of(context).colorScheme;
+
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
       builder: (context, snapshot) {
+        // 🔄 While checking auth state
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        } else if (snapshot.hasError) {
-          return const Scaffold(
-            body: Center(child: Text('Something went wrong!')),
-          );
-        } else {
-          return snapshot.data!;
+          return _buildLoadingScreen(context, 'Checking login...');
         }
+
+        // 🚫 Not logged in
+        if (!snapshot.hasData || snapshot.data == null) {
+          return const LoginPage();
+        }
+
+        // ✅ Logged in — determine role
+        return FutureBuilder<Widget>(
+          future: _getRoleBasedPage(snapshot.data!),
+          builder: (context, roleSnapshot) {
+            if (roleSnapshot.connectionState == ConnectionState.waiting) {
+              return _buildLoadingScreen(context, 'Loading your dashboard...');
+            } else if (roleSnapshot.hasError) {
+              return Scaffold(
+                backgroundColor: colors.surface,
+                body: Center(
+                  child: Text(
+                    'Something went wrong!',
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ),
+              );
+            } else {
+              return roleSnapshot.data!;
+            }
+          },
+        );
       },
+    );
+  }
+
+  /// 🌀 Centralized loading screen — matches your theme
+  Widget _buildLoadingScreen(BuildContext context, String message) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Scaffold(
+      backgroundColor: colors.surface,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 🎞️ Replace this with your loading GIF or logo animation later
+            Image.asset(
+              AppImages.logo,
+              width: 100,
+              height: 100,
+            ),
+            const SizedBox(height: 24),
+            CircularProgressIndicator(color: colors.primary),
+            const SizedBox(height: 16),
+            Text(
+              message,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: colors.onSurface),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

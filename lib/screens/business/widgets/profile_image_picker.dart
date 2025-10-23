@@ -1,7 +1,8 @@
 import 'dart:typed_data';
+import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'dart:io';
+import 'package:walkinsalonapp/core/app_config.dart';
 
 class ProfileImagePicker extends StatelessWidget {
   final Uint8List? webProfileImage;
@@ -17,16 +18,51 @@ class ProfileImagePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    ImageProvider? imageProvider;
+    if (kIsWeb && webProfileImage != null) {
+      imageProvider = MemoryImage(webProfileImage!);
+    } else if (!kIsWeb && profileImage != null) {
+      imageProvider = FileImage(profileImage!);
+    }
+
     return GestureDetector(
       onTap: onTap,
-      child: CircleAvatar(
-        radius: 50,
-        backgroundColor: Colors.grey[300],
-        backgroundImage: kIsWeb
-            ? (webProfileImage != null ? MemoryImage(webProfileImage!) : null)
-            : (profileImage != null ? FileImage(profileImage!) : null),
-        child: (profileImage == null && webProfileImage == null)
-            ? const Icon(Icons.camera_alt, size: 30, color: Colors.white)
+      child: Container(
+        width: 100,
+        height: 100,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: imageProvider == null
+              ? (isDark
+                  ? Colors.white.withOpacity(0.08)
+                  : AppColors.surface.withOpacity(0.5))
+              : Colors.transparent,
+          border: Border.all(
+            color: isDark
+                ? AppColors.darkBorder
+                : AppColors.border.withOpacity(0.8),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.25 : 0.1),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          image: imageProvider != null
+              ? DecorationImage(image: imageProvider, fit: BoxFit.cover)
+              : null,
+        ),
+        child: imageProvider == null
+            ? Icon(
+                Icons.camera_alt,
+                size: 30,
+                color: isDark
+                    ? AppColors.darkTextSecondary
+                    : AppColors.textSecondary,
+              )
             : null,
       ),
     );
