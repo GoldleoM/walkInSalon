@@ -36,17 +36,17 @@ class ProfileImagePicker extends StatelessWidget {
           shape: BoxShape.circle,
           color: imageProvider == null
               ? (isDark
-                  ? Colors.white.withOpacity(0.08)
-                  : AppColors.surface.withOpacity(0.5))
+                    ? Colors.white.withValues(alpha: 0.08)
+                    : AppColors.surface.withValues(alpha: 0.5))
               : Colors.transparent,
           border: Border.all(
             color: isDark
                 ? AppColors.darkBorder
-                : AppColors.border.withOpacity(0.8),
+                : AppColors.border.withValues(alpha: 0.8),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.25 : 0.1),
+              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.1),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),

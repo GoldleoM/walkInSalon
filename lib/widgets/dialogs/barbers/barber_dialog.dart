@@ -29,7 +29,9 @@ class _BarberDialogState extends State<BarberDialog> {
   void initState() {
     super.initState();
     nameController.text = widget.existingBarber?["name"] ?? "";
-    specialties = List<String>.from(widget.existingBarber?["specialties"] ?? []);
+    specialties = List<String>.from(
+      widget.existingBarber?["specialties"] ?? [],
+    );
   }
 
   @override
@@ -50,7 +52,9 @@ class _BarberDialogState extends State<BarberDialog> {
                 Expanded(
                   child: TextField(
                     controller: specialityController,
-                    decoration: const InputDecoration(labelText: "Add Specialty"),
+                    decoration: const InputDecoration(
+                      labelText: "Add Specialty",
+                    ),
                   ),
                 ),
                 IconButton(
@@ -64,22 +68,31 @@ class _BarberDialogState extends State<BarberDialog> {
               spacing: 8,
               runSpacing: 4,
               children: specialties
-                  .map((s) => Chip(
-                        label: Text(s),
-                        deleteIcon: const Icon(Icons.close, size: 18),
-                        onDeleted: () => removeSpecialty(s),
-                      ))
+                  .map(
+                    (s) => Chip(
+                      label: Text(s),
+                      deleteIcon: const Icon(Icons.close, size: 18),
+                      onDeleted: () => removeSpecialty(s),
+                    ),
+                  )
                   .toList(),
             ),
           ],
         ),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Cancel"),
+        ),
         ElevatedButton(
           onPressed: _isSaving ? null : _saveBarber,
           child: _isSaving
-              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
               : Text(widget.existingBarber == null ? "Add" : "Save"),
         ),
       ],
@@ -101,16 +114,18 @@ class _BarberDialogState extends State<BarberDialog> {
   Future<void> _saveBarber() async {
     final name = nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter a name")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please enter a name")));
       return;
     }
 
     setState(() => _isSaving = true);
 
     try {
-      final docRef = FirebaseFirestore.instance.collection('businesses').doc(widget.userId);
+      final docRef = FirebaseFirestore.instance
+          .collection('businesses')
+          .doc(widget.userId);
       final doc = await docRef.get();
       List barbers = List.from(doc.data()?['barbers'] ?? []);
 
@@ -132,7 +147,11 @@ class _BarberDialogState extends State<BarberDialog> {
       await docRef.set({"barbers": barbers}, SetOptions(merge: true));
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error saving barber: $e")));
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error saving barber: $e")));
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }

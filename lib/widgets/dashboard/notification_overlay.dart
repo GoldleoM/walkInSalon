@@ -35,7 +35,9 @@ class NotificationOverlay extends StatelessWidget {
             _buildHeader(context),
             Divider(
               height: 1,
-              color: AppConfig.adaptiveTextColor(context).withOpacity(0.3),
+              color: AppConfig.adaptiveTextColor(
+                context,
+              ).withValues(alpha: 0.3),
             ),
             Expanded(
               child: notifications.isEmpty
@@ -63,9 +65,11 @@ class NotificationOverlay extends StatelessWidget {
                           background: Container(
                             alignment: Alignment.centerRight,
                             padding: const EdgeInsets.only(right: 20),
-                            color: AppColors.error.withOpacity(0.7),
-                            child: const Icon(Icons.delete,
-                                color: AppColors.darkTextPrimary),
+                            color: AppColors.error.withValues(alpha: 0.7),
+                            child: const Icon(
+                              Icons.delete,
+                              color: AppColors.darkTextPrimary,
+                            ),
                           ),
                           child: ListTile(
                             dense: true,
@@ -94,9 +98,9 @@ class NotificationOverlay extends StatelessWidget {
                               time,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: AppConfig
-                                    .adaptiveTextColor(context)
-                                    .withOpacity(0.6),
+                                color: AppConfig.adaptiveTextColor(
+                                  context,
+                                ).withValues(alpha: 0.6),
                               ),
                             ),
                             onTap: () => onOpen(n),
@@ -119,10 +123,9 @@ class NotificationOverlay extends StatelessWidget {
         children: [
           Text(
             "Notifications",
-            style: Theme.of(context)
-                .textTheme
-                .titleSmall
-                ?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
           ),
           TextButton(
             onPressed: markAllRead,
@@ -136,4 +139,3 @@ class NotificationOverlay extends StatelessWidget {
     );
   }
 }
-  

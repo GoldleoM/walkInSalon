@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:walkinsalonapp/auth/login/auth_wrapper.dart';
 
 class LogoutButton extends StatelessWidget {
   const LogoutButton({super.key});
@@ -13,7 +14,10 @@ class LogoutButton extends StatelessWidget {
         title: const Text("Confirm Logout"),
         content: const Text("Are you sure you want to log out?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
@@ -26,17 +30,37 @@ class LogoutButton extends StatelessWidget {
     if (shouldLogout == true) {
       try {
         await FirebaseAuth.instance.signOut();
-        await Supabase.instance.client.auth.signOut();
+
+        // Try Supabase signout but don't block if it fails
+        try {
+          await Supabase.instance.client.auth.signOut();
+        } catch (e) {
+          debugPrint("Supabase signout failed (ignoring): $e");
+        }
+
         if (context.mounted) {
-          Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+          // Navigate to AuthWrapper (or Login) and clear stack
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => const AuthWrapper()),
+            (route) => false,
+          );
+
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Logged out successfully."), backgroundColor: AppColors.success),
+            const SnackBar(
+              content: Text("Logged out successfully."),
+              backgroundColor: AppColors.success,
+            ),
           );
         }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Logout failed: $e"), backgroundColor: AppColors.error),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("Logout failed: $e"),
+              backgroundColor: AppColors.error,
+            ),
+          );
+        }
       }
     }
   }

@@ -4,7 +4,8 @@ import 'package:walkinsalonapp/core/app_config.dart';
 
 typedef FormatTimestamp = String Function(Timestamp ts);
 typedef StatusColor = Color Function(String status);
-typedef EditAppointmentCallback = Future<void> Function(String docId, Map<String, dynamic> data);
+typedef EditAppointmentCallback =
+    Future<void> Function(String docId, Map<String, dynamic> data);
 
 class AppointmentsTable extends StatelessWidget {
   final List<QueryDocumentSnapshot> docs;
@@ -55,10 +56,7 @@ class AppointmentsTable extends StatelessWidget {
         padding: AppConfig.padding,
         child: Text(
           "No appointments yet",
-          style: Theme.of(context)
-              .textTheme
-              .bodyMedium
-              ?.copyWith(fontSize: 16),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 16),
         ),
       );
     }
@@ -69,14 +67,15 @@ class AppointmentsTable extends StatelessWidget {
         decoration: AppDecorations.glassPanel(context),
         child: DataTable(
           headingRowColor: WidgetStateProperty.all(
-            AppConfig.adaptiveSurface(context).withOpacity(0.8),
+            AppConfig.adaptiveSurface(context).withValues(alpha: 0.8),
           ),
-          headingTextStyle: Theme.of(context)
-              .textTheme
-              .labelLarge
-              ?.copyWith(fontWeight: FontWeight.bold, fontSize: 14),
-          dataTextStyle:
-              Theme.of(context).textTheme.bodyMedium?.copyWith(fontSize: 13),
+          headingTextStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+          dataTextStyle: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(fontSize: 13),
           columns: const [
             DataColumn(label: Text('#')),
             DataColumn(label: Text('Time')),
@@ -107,12 +106,15 @@ class AppointmentsTable extends StatelessWidget {
                 DataCell(Text(service)),
                 DataCell(
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.15),
-                      borderRadius:
-                          BorderRadius.circular(AppConstants.smallRadius),
+                      color: color.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.smallRadius,
+                      ),
                     ),
                     child: Text(
                       status,

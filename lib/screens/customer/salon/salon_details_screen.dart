@@ -1,0 +1,373 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:walkinsalonapp/core/app_config.dart';
+import 'package:walkinsalonapp/models/salon_model.dart';
+import 'package:walkinsalonapp/screens/customer/salon/widgets/barber_selector.dart';
+import 'package:walkinsalonapp/screens/customer/salon/widgets/service_list.dart';
+import 'package:walkinsalonapp/screens/customer/booking/booking_screen.dart';
+
+class SalonDetailsScreen extends StatelessWidget {
+  final SalonModel salon;
+
+  const SalonDetailsScreen({super.key, required this.salon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppConfig.adaptiveBackground(context),
+      body: CustomScrollView(
+        slivers: [
+          // 🖼️ Hero Image App Bar
+          SliverAppBar(
+            expandedHeight: 250,
+            pinned: true,
+            backgroundColor: AppColors.primary,
+            flexibleSpace: FlexibleSpaceBar(
+              background: salon.imageUrl != null
+                  ? Image.network(salon.imageUrl!, fit: BoxFit.cover)
+                  : Container(
+                      color: AppColors.secondary,
+                      child: const Center(
+                        child: Icon(Icons.store, size: 60, color: Colors.white),
+                      ),
+                    ),
+            ),
+            leading: IconButton(
+              icon: const CircleAvatar(
+                backgroundColor: Colors.black54,
+                child: Icon(Icons.arrow_back, color: Colors.white),
+              ),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ),
+
+          // ℹ️ Salon Info
+          SliverToBoxAdapter(
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppConfig.adaptiveBackground(context),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          salon.salonName,
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              size: 18,
+                              color: AppColors.warning,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              salon.rating.toStringAsFixed(1),
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.warning,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.location_on,
+                        size: 16,
+                        color: AppConfig.adaptiveTextColor(
+                          context,
+                        ).withValues(alpha: 0.6),
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          salon.address,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: AppConfig.adaptiveTextColor(
+                                  context,
+                                ).withValues(alpha: 0.6),
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 💈 Barbers
+                  BarberSelector(
+                    barbers: salon.barbers,
+                    onBarberSelected: (barber) {
+                      // Show barber details or filter services?
+                    },
+                  ),
+                  const SizedBox(height: 24),
+
+                  // ✂️ Services Header
+                  Text(
+                    "Services",
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // 📋 Services List
+          SliverList(
+            delegate: SliverChildBuilderDelegate((context, index) {
+              if (index == 0) {
+                return ServiceList(
+                  services: salon.services,
+                  onServiceSelected: (service) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            BookingScreen(salon: salon, service: service),
+                      ),
+                    );
+                  },
+                );
+              }
+              return null;
+            }, childCount: 1),
+          ),
+
+          // Extra padding at bottom
+          const SliverToBoxAdapter(child: SizedBox(height: 80)),
+        ],
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppConfig.adaptiveSurface(context),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
+        ),
+        child: SafeArea(
+          child: ElevatedButton(
+            onPressed: () {
+              _showServiceSelection(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              "Book Appointment",
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          _showReviewDialog(context);
+        },
+        backgroundColor: AppConfig.adaptiveSurface(context),
+        foregroundColor: AppConfig.adaptiveTextColor(context),
+        child: const Icon(Icons.rate_review),
+      ),
+    );
+  }
+
+  void _showServiceSelection(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppConfig.adaptiveSurface(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Select a Service",
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              if (salon.services.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text("No services available for booking."),
+                )
+              else
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: salon.services.length,
+                    separatorBuilder: (context, index) => const Divider(),
+                    itemBuilder: (context, index) {
+                      final service = salon.services[index];
+                      return ListTile(
+                        title: Text(service['name'] ?? 'Unknown Service'),
+                        subtitle: Text(
+                          "\$${service['price'] ?? '0'} • ${service['duration'] ?? '30'} min",
+                        ),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                        onTap: () {
+                          Navigator.pop(context); // Close modal
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  BookingScreen(salon: salon, service: service),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showReviewDialog(BuildContext context) {
+    final TextEditingController commentController = TextEditingController();
+    double rating = 5.0;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Write a Review"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text("Rate your experience:"),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star : Icons.star_border,
+                          color: AppColors.warning,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            rating = index + 1.0;
+                          });
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: commentController,
+                    decoration: const InputDecoration(
+                      hintText: "Share your thoughts...",
+                      border: OutlineInputBorder(),
+                    ),
+                    maxLines: 3,
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (commentController.text.isEmpty) return;
+
+                    try {
+                      final user = FirebaseAuth.instance.currentUser;
+                      if (user == null) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Please login to review"),
+                          ),
+                        );
+                        return;
+                      }
+
+                      await FirebaseFirestore.instance
+                          .collection('reviews')
+                          .add({
+                            'businessId': salon.uid,
+                            'customerId': user.uid,
+                            'customerName': user.displayName ?? 'Anonymous',
+                            'rating': rating,
+                            'comment': commentController.text,
+                            'createdAt': FieldValue.serverTimestamp(),
+                          });
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Review submitted!")),
+                        );
+                      }
+                    } catch (e) {
+                      debugPrint("Error submitting review: $e");
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text("Error: $e")));
+                      }
+                    }
+                  },
+                  child: const Text("Submit"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+}

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 import 'customer_panel.dart';
 import 'owner_panel.dart';
@@ -12,9 +13,10 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  bool _isBusiness = false;
+
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.of(context).size.width > 800;
     final colors = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -28,7 +30,7 @@ class _LoginPageState extends State<LoginPage> {
             image: AssetImage(AppImages.loginBackground),
             fit: BoxFit.cover,
             colorFilter: ColorFilter.mode(
-              Colors.black.withOpacity(isDark ? 0.5 : 0.25),
+              Colors.black.withValues(alpha: isDark ? 0.7 : 0.4),
               BlendMode.darken,
             ),
           ),
@@ -42,11 +44,9 @@ class _LoginPageState extends State<LoginPage> {
                 // 🌟 Logo + Branding Header
                 Column(
                       children: [
-                        // 🖼️ Logo
                         Image.asset(
-                              AppImages
-                                  .logo, // Make sure this path is in pubspec.yaml
-                              height: 90,
+                              AppImages.logo,
+                              height: 80,
                               fit: BoxFit.contain,
                             )
                             .animate()
@@ -57,10 +57,7 @@ class _LoginPageState extends State<LoginPage> {
                               duration: 400.ms,
                               curve: Curves.easeOut,
                             ),
-
                         const SizedBox(height: 12),
-
-                        // 🧠 App Name with Outline Effect
                         Text(
                           AppConfig.appName,
                           style: Theme.of(context).textTheme.headlineLarge
@@ -70,9 +67,7 @@ class _LoginPageState extends State<LoginPage> {
                                 color: Colors.white,
                                 shadows: [
                                   Shadow(
-                                    color: isDark
-                                        ? Colors.white.withOpacity(0.4)
-                                        : Colors.black.withOpacity(0.4),
+                                    color: Colors.black.withValues(alpha: 0.3),
                                     offset: const Offset(2, 2),
                                     blurRadius: 4,
                                   ),
@@ -80,13 +75,11 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                         ),
                         const SizedBox(height: 8),
-
-                        // ✨ Slogan / Subtitle
                         Text(
                           AppConfig.slogan,
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
-                                color: Colors.white70,
+                                color: Colors.white.withValues(alpha: 0.9),
                                 fontStyle: FontStyle.italic,
                               ),
                         ),
@@ -94,102 +87,145 @@ class _LoginPageState extends State<LoginPage> {
                     )
                     .animate(onPlay: (controller) => controller.forward())
                     .fadeIn(duration: 400.ms, curve: Curves.easeOut)
-                    .slide(
-                      begin: const Offset(0, -0.05),
-                      end: Offset.zero,
-                      duration: 350.ms,
-                      curve: Curves.easeOut,
-                    ),
+                    .slideY(begin: -0.1, end: 0, duration: 350.ms),
 
-                const SizedBox(height: 40),
+                const SizedBox(height: 32),
 
-                // 🧩 Panels Area
+                // 🧩 Unified Card with Toggle
                 Container(
-                  constraints: const BoxConstraints(maxWidth: 1100),
-                  padding: const EdgeInsets.all(16),
-                  decoration: AppDecorations.glassPanel(context),
-                  child: isWide
-                      ? Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            // 👤 Customer Panel
-                            Expanded(
-                              child: const CustomerPanel()
-                                  .animate(delay: 100.ms)
-                                  .fadeIn(
-                                    duration: 400.ms,
-                                    curve: Curves.easeOut,
-                                  )
-                                  .slide(
+                      constraints: const BoxConstraints(maxWidth: 450),
+                      padding: const EdgeInsets.all(24),
+                      decoration: AppDecorations.glassPanel(context),
+                      child: Column(
+                        children: [
+                          // 🎚️ Toggle Switch
+                          _LoginToggle(
+                            isBusiness: _isBusiness,
+                            onChanged: (val) =>
+                                setState(() => _isBusiness = val),
+                          ),
+                          const SizedBox(height: 32),
+
+                          // 🔄 Animated Panel Switcher
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 400),
+                            switchInCurve: Curves.easeOut,
+                            switchOutCurve: Curves.easeIn,
+                            transitionBuilder: (child, animation) {
+                              return FadeTransition(
+                                opacity: animation,
+                                child: SlideTransition(
+                                  position: Tween<Offset>(
                                     begin: const Offset(0, 0.05),
                                     end: Offset.zero,
-                                    duration: 400.ms,
-                                    curve: Curves.easeOut,
-                                  ),
-                            ),
-
-                            Container(
-                              width: 1,
-                              height: 500,
-                              margin: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                              ),
-                              color: Colors.white.withOpacity(0.25),
-                            ),
-
-                            // 💈 Owner Panel
-                            Expanded(
-                              child: const OwnerPanel()
-                                  .animate(delay: 250.ms)
-                                  .fadeIn(
-                                    duration: 400.ms,
-                                    curve: Curves.easeOut,
-                                  )
-                                  .slide(
-                                    begin: const Offset(0, 0.05),
-                                    end: Offset.zero,
-                                    duration: 400.ms,
-                                    curve: Curves.easeOut,
-                                  ),
-                            ),
-                          ],
-                        )
-                      : Column(
-                          children: [
-                            const CustomerPanel()
-                                .animate(delay: 100.ms)
-                                .fadeIn(duration: 400.ms, curve: Curves.easeOut)
-                                .slide(
-                                  begin: const Offset(0, 0.05),
-                                  end: Offset.zero,
-                                  duration: 400.ms,
-                                  curve: Curves.easeOut,
+                                  ).animate(animation),
+                                  child: child,
                                 ),
-
-                            Container(
-                              width: double.infinity,
-                              height: 1,
-                              margin: const EdgeInsets.symmetric(vertical: 28),
-                              color: Colors.white.withOpacity(0.25),
-                            ),
-
-                            const OwnerPanel()
-                                .animate(delay: 250.ms)
-                                .fadeIn(duration: 400.ms, curve: Curves.easeOut)
-                                .slide(
-                                  begin: const Offset(0, 0.05),
-                                  end: Offset.zero,
-                                  duration: 400.ms,
-                                  curve: Curves.easeOut,
-                                ),
-                          ],
-                        ),
-                ),
+                              );
+                            },
+                            child: _isBusiness
+                                ? const OwnerPanel(key: ValueKey('owner'))
+                                : const CustomerPanel(
+                                    key: ValueKey('customer'),
+                                  ),
+                          ),
+                        ],
+                      ),
+                    )
+                    .animate(delay: 200.ms)
+                    .fadeIn(duration: 500.ms)
+                    .slideY(begin: 0.1, end: 0, duration: 400.ms),
               ],
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _LoginToggle extends StatelessWidget {
+  final bool isBusiness;
+  final ValueChanged<bool> onChanged;
+
+  const _LoginToggle({required this.isBusiness, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return Container(
+      height: 50,
+      decoration: BoxDecoration(
+        color: colors.surface.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(25),
+        border: Border.all(color: colors.outline.withValues(alpha: 0.1)),
+      ),
+      child: Stack(
+        children: [
+          // Animated Background Indicator
+          AnimatedAlign(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            alignment: isBusiness
+                ? Alignment.centerRight
+                : Alignment.centerLeft,
+            child: FractionallySizedBox(
+              widthFactor: 0.5,
+              child: Container(
+                margin: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: colors.primary,
+                  borderRadius: BorderRadius.circular(21),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colors.primary.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Clickable Labels
+          Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => onChanged(false),
+                  behavior: HitTestBehavior.opaque,
+                  child: Center(
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 200),
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w600,
+                        color: !isBusiness ? Colors.white : colors.onSurface,
+                      ),
+                      child: const Text("Customer"),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => onChanged(true),
+                  behavior: HitTestBehavior.opaque,
+                  child: Center(
+                    child: AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 200),
+                      style: GoogleFonts.inter(
+                        fontWeight: FontWeight.w600,
+                        color: isBusiness ? Colors.white : colors.onSurface,
+                      ),
+                      child: const Text("Business"),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:walkinsalonapp/widgets/reviews/review_card.dart';
 import 'package:walkinsalonapp/widgets/dialogs/reviews/reply_dialog.dart';
+import 'package:walkinsalonapp/services/database_seeder.dart';
 
 class ReviewsPage extends StatefulWidget {
   const ReviewsPage({super.key});
@@ -35,17 +36,27 @@ class _ReviewsPageState extends State<ReviewsPage> {
       final snapshot = await _firestore
           .collection('reviews')
           .where('businessId', isEqualTo: businessId)
-          .orderBy('createdAt', descending: true)
           .get();
 
+      final docs = snapshot.docs;
+      // Client-side sort to avoid missing index issues
+      docs.sort((a, b) {
+        final t1 = a.data()['createdAt'] as Timestamp?;
+        final t2 = b.data()['createdAt'] as Timestamp?;
+        if (t1 == null) return 1;
+        if (t2 == null) return -1;
+        return t2.compareTo(t1); // Descending
+      });
+
       setState(() {
-        _reviews = snapshot.docs;
+        _reviews = docs;
       });
     } catch (e) {
       debugPrint("Error loading reviews: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to load reviews: $e")),
-      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to load reviews: $e")));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -59,9 +70,10 @@ class _ReviewsPageState extends State<ReviewsPage> {
       });
     } catch (e) {
       debugPrint("Failed to reply: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to post reply: $e")),
-      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to post reply: $e")));
     }
   }
 
@@ -72,9 +84,10 @@ class _ReviewsPageState extends State<ReviewsPage> {
         onSubmit: (reply) async {
           await _replyToReview(reviewId, reply);
           await _loadReviews();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Reply posted!")),
-          );
+          if (!context.mounted) return;
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Reply posted!")));
         },
       ),
     );
@@ -101,6 +114,35 @@ class _ReviewsPageState extends State<ReviewsPage> {
         ),
         backgroundColor: AppColors.primary,
         elevation: 2,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.cloud_upload, color: Colors.white),
+            tooltip: 'Seed Reviews',
+            onPressed: () async {
+              if (businessId.isEmpty) return;
+              setState(() => _isLoading = true);
+              try {
+                await DatabaseSeeder().seedReviews(businessId);
+                await _loadReviews();
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Reviews seeded successfully!"),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Failed to seed reviews: $e")),
+                  );
+                }
+              } finally {
+                setState(() => _isLoading = false);
+              }
+            },
+          ),
+        ],
       ),
       body: _reviews.isEmpty
           ? Center(

@@ -10,7 +10,7 @@ import 'package:uuid/uuid.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:walkinsalonapp/auth/login/login_page.dart';
-import 'package:walkinsalonapp/pages/business_dashboard_page.dart';
+import 'package:walkinsalonapp/screens/business/business_dashboard_page.dart';
 import 'package:walkinsalonapp/widgets/dialogs/barbers/add_barber_dialog.dart';
 import 'package:walkinsalonapp/widgets/dialogs/barbers/add_specialty_dialog.dart';
 import 'package:walkinsalonapp/screens/business/widgets/cover_image_picker.dart';
@@ -88,6 +88,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
         _latitude = picked.latitude;
         _longitude = picked.longitude;
       });
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -198,9 +199,9 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
       );
     } catch (e) {
       debugPrint("❌ Error saving business details: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       setState(() => _isSaving = false);
     }
@@ -260,8 +261,11 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Icon(Icons.storefront_rounded,
-                        color: colors.primary, size: 50),
+                    Icon(
+                      Icons.storefront_rounded,
+                      color: colors.primary,
+                      size: 50,
+                    ),
                     const SizedBox(height: 12),
                     Text(
                       "Salon Details",
@@ -275,7 +279,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                     Text(
                       "Complete your salon setup to get started",
                       style: GoogleFonts.inter(
-                        color: colors.onSurface.withOpacity(0.7),
+                        color: colors.onSurface.withValues(alpha: 0.7),
                         fontSize: 14,
                       ),
                       textAlign: TextAlign.center,
@@ -297,11 +301,11 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                     ),
                     const SizedBox(height: 24),
 
-                    _buildTextField(_salonNameController, "Salon Name"),
+                    _buildTextField(_salonNameController, "Salon Name", false),
                     const SizedBox(height: 12),
-                    _buildTextField(_phoneController, "Phone Number"),
+                    _buildTextField(_phoneController, "Phone Number", false),
                     const SizedBox(height: 12),
-                    _buildTextField(_addressController, "Address"),
+                    _buildTextField(_addressController, "Address", false),
                     const SizedBox(height: 16),
 
                     Align(
@@ -314,8 +318,9 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                           backgroundColor: AppColors.primary,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppConstants.smallRadius),
+                            borderRadius: BorderRadius.circular(
+                              AppConstants.smallRadius,
+                            ),
                           ),
                         ),
                       ),
@@ -331,7 +336,10 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                             onTap: () => _pickTime(_openTimeController),
                             child: AbsorbPointer(
                               child: _buildTextField(
-                                  _openTimeController, "Open Time"),
+                                _openTimeController,
+                                "Open Time",
+                                true,
+                              ),
                             ),
                           ),
                         ),
@@ -341,7 +349,10 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                             onTap: () => _pickTime(_closeTimeController),
                             child: AbsorbPointer(
                               child: _buildTextField(
-                                  _closeTimeController, "Close Time"),
+                                _closeTimeController,
+                                "Close Time",
+                                true,
+                              ),
                             ),
                           ),
                         ),
@@ -363,8 +374,10 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                         ),
                         IconButton(
                           onPressed: _addBarber,
-                          icon:
-                              Icon(Icons.add_circle, color: AppColors.primary),
+                          icon: Icon(
+                            Icons.add_circle,
+                            color: AppColors.primary,
+                          ),
                         ),
                       ],
                     ),
@@ -377,8 +390,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                           barber: barber,
                           onAddSpecialty: () => _addSpecialty(index),
                           onDeleteSpecialty: (spec) {
-                            setState(() =>
-                                barber['specialties'].remove(spec));
+                            setState(() => barber['specialties'].remove(spec));
                           },
                         );
                       }).toList(),
@@ -391,15 +403,14 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                       children: [
                         Expanded(
                           child: ElevatedButton(
-                            onPressed:
-                                _isSaving ? null : _saveBusinessDetails,
+                            onPressed: _isSaving ? null : _saveBusinessDetails,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.primary,
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(
-                                    AppConstants.smallRadius),
+                                  AppConstants.smallRadius,
+                                ),
                               ),
                               elevation: AppConstants.elevation,
                             ),
@@ -428,21 +439,21 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                             onPressed: _isSaving
                                 ? null
                                 : () => Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const LoginPage(),
-                                      ),
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const LoginPage(),
                                     ),
+                                  ),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: colors.onSurface,
                               side: BorderSide(
-                                color: colors.outline.withOpacity(0.5),
+                                color: colors.outline.withValues(alpha: 0.5),
                               ),
-                              padding: const EdgeInsets.symmetric(
-                                  vertical: 16),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(
-                                    AppConstants.smallRadius),
+                                  AppConstants.smallRadius,
+                                ),
                               ),
                             ),
                             child: Text(
@@ -450,7 +461,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
-                                color: colors.onSurface.withOpacity(0.7),
+                                color: colors.onSurface.withValues(alpha: 0.7),
                               ),
                             ),
                           ),
@@ -468,25 +479,28 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
   }
 
   // Reusable themed input
-  Widget _buildTextField(TextEditingController controller, String label) {
+  Widget _buildTextField(
+    TextEditingController controller,
+    String label,
+    bool read,
+  ) {
     final colors = Theme.of(context).colorScheme;
+
     return TextFormField(
       controller: controller,
-      readOnly: true,
+      readOnly: read,
       style: TextStyle(color: colors.onSurface),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: colors.onSurface.withOpacity(0.7)),
+        labelStyle: TextStyle(color: colors.onSurface.withValues(alpha: 0.7)),
         filled: true,
-        fillColor: colors.surface.withOpacity(0.8),
+        fillColor: colors.surface.withValues(alpha: 0.8),
         border: OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(AppConstants.smallRadius),
-          borderSide: BorderSide(color: colors.outline.withOpacity(0.3)),
+          borderRadius: BorderRadius.circular(AppConstants.smallRadius),
+          borderSide: BorderSide(color: colors.outline.withValues(alpha: 0.3)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(AppConstants.smallRadius),
+          borderRadius: BorderRadius.circular(AppConstants.smallRadius),
           borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
       ),

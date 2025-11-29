@@ -29,13 +29,11 @@ class UpcomingAppointmentsWidget extends StatelessWidget {
         if (docs.isEmpty) {
           return Text(
             "No upcoming appointments.",
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(
-                    color: AppConfig
-                        .adaptiveTextColor(context)
-                        .withOpacity(0.6)),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppConfig.adaptiveTextColor(
+                context,
+              ).withValues(alpha: 0.6),
+            ),
           );
         }
 
@@ -44,7 +42,8 @@ class UpcomingAppointmentsWidget extends StatelessWidget {
                 children: docs.map((doc) {
                   final data = doc.data() as Map<String, dynamic>;
                   final startAt =
-                      (data['startAt'] as Timestamp?)?.toDate() ?? DateTime.now();
+                      (data['startAt'] as Timestamp?)?.toDate() ??
+                      DateTime.now();
                   final timeStr = DateFormat('MMM d, h:mm a').format(startAt);
                   return Container(
                     margin: const EdgeInsets.symmetric(vertical: 6),
@@ -54,10 +53,9 @@ class UpcomingAppointmentsWidget extends StatelessWidget {
                       subtitle: Text("${data['service']} at $timeStr"),
                       trailing: Text(
                         (data['status'] ?? '').toString(),
-                        style: Theme.of(context)
-                            .textTheme
-                            .labelLarge
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   );
@@ -76,14 +74,19 @@ class UpcomingAppointmentsWidget extends StatelessWidget {
                   rows: docs.map((doc) {
                     final data = doc.data() as Map<String, dynamic>;
                     final startAt =
-                        (data['startAt'] as Timestamp?)?.toDate() ?? DateTime.now();
-                    return DataRow(cells: [
-                      DataCell(Text(DateFormat('MMM d, h:mm a').format(startAt))),
-                      DataCell(Text(data['customerName'] ?? '-')),
-                      DataCell(Text(data['barberName'] ?? '-')),
-                      DataCell(Text(data['service'] ?? '-')),
-                      DataCell(Text(data['status'] ?? '-')),
-                    ]);
+                        (data['startAt'] as Timestamp?)?.toDate() ??
+                        DateTime.now();
+                    return DataRow(
+                      cells: [
+                        DataCell(
+                          Text(DateFormat('MMM d, h:mm a').format(startAt)),
+                        ),
+                        DataCell(Text(data['customerName'] ?? '-')),
+                        DataCell(Text(data['barberName'] ?? '-')),
+                        DataCell(Text(data['service'] ?? '-')),
+                        DataCell(Text(data['status'] ?? '-')),
+                      ],
+                    );
                   }).toList(),
                 ),
               );

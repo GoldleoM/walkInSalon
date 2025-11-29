@@ -30,19 +30,19 @@ class ReviewCard extends StatelessWidget {
               children: [
                 Text(
                   review["customerName"] ?? "Anonymous",
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 Text(
                   (review["createdAt"] as Timestamp?) != null
                       ? review["createdAt"].toDate().toString().split(" ").first
                       : "",
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(color: AppConfig.adaptiveTextColor(context).withOpacity(0.6)),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppConfig.adaptiveTextColor(
+                      context,
+                    ).withValues(alpha: 0.6),
+                  ),
                 ),
               ],
             ),
@@ -52,9 +52,11 @@ class ReviewCard extends StatelessWidget {
             Text(
               "Barber: ${review["barberName"] ?? "N/A"}",
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontStyle: FontStyle.italic,
-                    color: AppConfig.adaptiveTextColor(context).withOpacity(0.7),
-                  ),
+                fontStyle: FontStyle.italic,
+                color: AppConfig.adaptiveTextColor(
+                  context,
+                ).withValues(alpha: 0.7),
+              ),
             ),
             const SizedBox(height: 8),
 
@@ -73,8 +75,10 @@ class ReviewCard extends StatelessWidget {
             const SizedBox(height: 10),
 
             // Comment
-      Text(review["comment"] ?? "",
-        style: Theme.of(context).textTheme.bodyMedium),
+            Text(
+              review["comment"] ?? "",
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
             const SizedBox(height: 10),
 
             // Reply Section
@@ -106,12 +110,16 @@ class ReviewCard extends StatelessWidget {
                         children: [
                           Text(
                             "Owner Reply:",
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelLarge
-                                ?.copyWith(fontWeight: FontWeight.bold, fontSize: 13),
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 13,
+                                ),
                           ),
-                          Text(review["reply"], style: Theme.of(context).textTheme.bodySmall),
+                          Text(
+                            review["reply"],
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
                         ],
                       ),
                     ),

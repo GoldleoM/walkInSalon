@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
-import '../widgets/dialogs/barbers/barber_dialog.dart';
-import '../widgets/barbers/barber_card.dart';
+import 'package:walkinsalonapp/widgets/dialogs/barbers/barber_dialog.dart';
+import 'package:walkinsalonapp/widgets/barbers/barber_card.dart';
 
 class BarberManagementPage extends StatefulWidget {
   const BarberManagementPage({super.key});
@@ -45,10 +45,9 @@ class _BarberManagementPageState extends State<BarberManagementPage> {
             return Center(
               child: Text(
                 "Error: ${snapshot.error}",
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: colors.error),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: colors.error),
               ),
             );
           }
@@ -61,17 +60,17 @@ class _BarberManagementPageState extends State<BarberManagementPage> {
             return Center(
               child: Text(
                 "No business data found.",
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: colors.onSurface.withOpacity(0.6)),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colors.onSurface.withValues(alpha: 0.6),
+                ),
               ),
             );
           }
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
-          final barbers =
-              List<Map<String, dynamic>>.from(data['barbers'] ?? []);
+          final barbers = List<Map<String, dynamic>>.from(
+            data['barbers'] ?? [],
+          );
 
           if (barbers.isEmpty) {
             return Center(
@@ -79,8 +78,8 @@ class _BarberManagementPageState extends State<BarberManagementPage> {
                 "No barbers added yet.\nTap '+' to add one.",
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colors.onSurface.withOpacity(0.6),
-                    ),
+                  color: colors.onSurface.withValues(alpha: 0.6),
+                ),
               ),
             );
           }
@@ -105,7 +104,10 @@ class _BarberManagementPageState extends State<BarberManagementPage> {
   }
 
   /// 🔹 Show Add/Edit Barber dialog
-  void _showAddBarberDialog({Map<String, dynamic>? existingBarber, int? index}) {
+  void _showAddBarberDialog({
+    Map<String, dynamic>? existingBarber,
+    int? index,
+  }) {
     showDialog(
       context: context,
       builder: (_) => BarberDialog(
@@ -130,14 +132,14 @@ class _BarberManagementPageState extends State<BarberManagementPage> {
         ),
         content: Text(
           "Are you sure you want to delete ${name ?? "this barber"}?",
-          style: TextStyle(color: colors.onSurface.withOpacity(0.8)),
+          style: TextStyle(color: colors.onSurface.withValues(alpha: 0.8)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
               "Cancel",
-              style: TextStyle(color: colors.onSurface.withOpacity(0.7)),
+              style: TextStyle(color: colors.onSurface.withValues(alpha: 0.7)),
             ),
           ),
           ElevatedButton(
@@ -158,8 +160,9 @@ class _BarberManagementPageState extends State<BarberManagementPage> {
     if (confirm != true) return;
 
     try {
-      final docRef =
-          FirebaseFirestore.instance.collection('businesses').doc(userId);
+      final docRef = FirebaseFirestore.instance
+          .collection('businesses')
+          .doc(userId);
       final doc = await docRef.get();
       List barbers = List.from(doc.data()?['barbers'] ?? []);
 
@@ -177,9 +180,9 @@ class _BarberManagementPageState extends State<BarberManagementPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error deleting barber: $e")),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error deleting barber: $e")));
       }
     }
   }
@@ -187,8 +190,9 @@ class _BarberManagementPageState extends State<BarberManagementPage> {
   /// 🔄 Toggle Barber Availability
   Future<void> _toggleAvailability(int index, bool available) async {
     try {
-      final docRef =
-          FirebaseFirestore.instance.collection('businesses').doc(userId);
+      final docRef = FirebaseFirestore.instance
+          .collection('businesses')
+          .doc(userId);
       final doc = await docRef.get();
       List barbers = List.from(doc.data()?['barbers'] ?? []);
 

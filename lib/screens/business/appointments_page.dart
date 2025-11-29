@@ -74,8 +74,8 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
               child: Text(
                 "No appointments yet",
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colors.onSurface.withOpacity(0.6),
-                    ),
+                  color: colors.onSurface.withValues(alpha: 0.6),
+                ),
               ),
             );
           }
@@ -90,7 +90,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                 borderRadius: BorderRadius.circular(AppConstants.borderRadius),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),

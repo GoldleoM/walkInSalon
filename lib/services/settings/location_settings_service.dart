@@ -25,10 +25,13 @@ class LocationService {
 
     try {
       final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
       return LatLng(pos.latitude, pos.longitude);
     } catch (e) {
+      // ignore: avoid_print
       print("Error getting current location: $e");
       return const LatLng(12.9716, 77.5946);
     }
@@ -51,9 +54,11 @@ class LocationService {
           return data['display_name'];
         }
       } else {
+        // ignore: avoid_print
         print('Reverse geocode failed with status: ${res.statusCode}');
       }
     } catch (e) {
+      // ignore: avoid_print
       print("Reverse geocode error: $e");
     }
     return null;

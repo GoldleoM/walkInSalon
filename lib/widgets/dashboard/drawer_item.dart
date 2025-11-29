@@ -17,8 +17,8 @@ Widget buildDrawerItem(
         filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),
-          splashColor: Colors.white.withOpacity(0.1),
-          highlightColor: Colors.white.withOpacity(0.05),
+          splashColor: Colors.white.withValues(alpha: 0.1),
+          highlightColor: Colors.white.withValues(alpha: 0.05),
           onTap: () {
             Navigator.pop(context);
             Navigator.push(context, MaterialPageRoute(builder: (_) => page));
@@ -31,28 +31,33 @@ Widget buildDrawerItem(
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: AppColors.darkTextPrimary.withOpacity(0.1),
+                    color: AppColors.darkTextPrimary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                     boxShadow: AppDecorations.shadowSoft(
-                        isDark: Theme.of(context).brightness == Brightness.dark),
+                      isDark: Theme.of(context).brightness == Brightness.dark,
+                    ),
                   ),
                   padding: const EdgeInsets.all(8),
-                  child: Icon(icon,
-                      color: AppConfig.adaptiveTextColor(context), size: 22),
+                  child: Icon(
+                    icon,
+                    color: AppConfig.adaptiveTextColor(context),
+                    size: 22,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Text(
                     title,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall
-                        ?.copyWith(fontWeight: FontWeight.w500),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
                 Icon(
                   Icons.chevron_right_rounded,
-                  color: AppConfig.adaptiveTextColor(context).withOpacity(0.45),
+                  color: AppConfig.adaptiveTextColor(
+                    context,
+                  ).withValues(alpha: 0.45),
                   size: 20,
                 ),
               ],

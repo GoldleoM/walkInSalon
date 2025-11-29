@@ -20,23 +20,38 @@ class ImageUploadService {
 
     try {
       if (kIsWeb && imageFile is Uint8List) {
-        await _supabase.storage.from('salon-images').uploadBinary(
-          filePath,
-          imageFile,
-          fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
-        );
+        await _supabase.storage
+            .from('salon-images')
+            .uploadBinary(
+              filePath,
+              imageFile,
+              fileOptions: const FileOptions(
+                contentType: 'image/jpeg',
+                upsert: true,
+              ),
+            );
       } else if (imageFile is File) {
-        await _supabase.storage.from('salon-images').upload(
-          filePath,
-          imageFile,
-          fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
-        );
+        await _supabase.storage
+            .from('salon-images')
+            .upload(
+              filePath,
+              imageFile,
+              fileOptions: const FileOptions(
+                contentType: 'image/jpeg',
+                upsert: true,
+              ),
+            );
       } else if (imageFile is Uint8List) {
-        await _supabase.storage.from('salon-images').uploadBinary(
-          filePath,
-          imageFile,
-          fileOptions: const FileOptions(contentType: 'image/jpeg', upsert: true),
-        );
+        await _supabase.storage
+            .from('salon-images')
+            .uploadBinary(
+              filePath,
+              imageFile,
+              fileOptions: const FileOptions(
+                contentType: 'image/jpeg',
+                upsert: true,
+              ),
+            );
       } else {
         throw Exception('Unsupported image type: ${imageFile.runtimeType}');
       }

@@ -3,8 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:walkinsalonapp/widgets/dashboard/notification_overlay.dart';
-import 'package:walkinsalonapp/pages/appointments_page.dart';
-import 'package:walkinsalonapp/pages/reviews_page.dart';
+import 'package:walkinsalonapp/screens/business/appointments_page.dart';
+import 'package:walkinsalonapp/screens/business/reviews_page.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 
 class DashboardAppBar extends StatefulWidget implements PreferredSizeWidget {
@@ -221,7 +221,7 @@ class _DashboardAppBarState extends State<DashboardAppBar> {
               sigmaY: AppConstants.blurSigma,
             ),
             child: Container(
-              color: AppConfig.adaptiveSurface(context).withOpacity(0.07),
+              color: AppConfig.adaptiveSurface(context).withValues(alpha: 0.07),
             ),
           ),
         ),
@@ -250,7 +250,7 @@ class _DashboardAppBarState extends State<DashboardAppBar> {
                         size: 28,
                         color: AppConfig.adaptiveTextColor(
                           context,
-                        ).withOpacity(0.8),
+                        ).withValues(alpha: 0.8),
                       ),
                     ),
                     if (_notifications.any((n) => !(n['read'] ?? false)))
@@ -275,7 +275,7 @@ class _DashboardAppBarState extends State<DashboardAppBar> {
                 child: CircleAvatar(
                   radius: 20,
                   backgroundColor: AppConfig.adaptiveSurface(context),
-                  backgroundImage: bustedUrl != null 
+                  backgroundImage: bustedUrl != null
                       ? NetworkImage(bustedUrl)
                       : null,
                   onBackgroundImageError: bustedUrl != null ? (_, __) {} : null,
@@ -284,7 +284,7 @@ class _DashboardAppBarState extends State<DashboardAppBar> {
                           Icons.person,
                           color: AppConfig.adaptiveTextColor(
                             context,
-                          ).withOpacity(0.6),
+                          ).withValues(alpha: 0.6),
                         )
                       : null,
                 ),

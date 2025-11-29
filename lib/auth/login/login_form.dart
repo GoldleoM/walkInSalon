@@ -31,10 +31,10 @@ class LoginPanelForm extends StatelessWidget {
 
     return Card(
       elevation: AppConstants.elevation,
-      color: colors.surface.withOpacity(0.9),
+      color: colors.surface.withValues(alpha: 0.9),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppConstants.borderRadius),
-        side: BorderSide(color: colors.outline.withOpacity(0.1)),
+        side: BorderSide(color: colors.outline.withValues(alpha: 0.1)),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 28),
@@ -47,32 +47,37 @@ class LoginPanelForm extends StatelessWidget {
                 title,
                 textAlign: TextAlign.center,
                 style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: colors.onSurface,
-                    ),
+                  fontWeight: FontWeight.w700,
+                  color: colors.onSurface,
+                ),
               ),
               const SizedBox(height: 18),
 
               // ✉️ Email field
               TextFormField(
                 controller: emailController,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: colors.onSurface),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: colors.onSurface),
                 decoration: InputDecoration(
                   labelText: 'Email',
-                  labelStyle: TextStyle(color: colors.onSurface.withOpacity(0.7)),
+                  labelStyle: TextStyle(
+                    color: colors.onSurface.withValues(alpha: 0.7),
+                  ),
                   filled: true,
-                  fillColor: colors.surface.withOpacity(0.8),
+                  fillColor: colors.surface.withValues(alpha: 0.8),
                   border: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppConstants.smallRadius),
-                    borderSide: BorderSide(color: colors.outline.withOpacity(0.2)),
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.smallRadius,
+                    ),
+                    borderSide: BorderSide(
+                      color: colors.outline.withValues(alpha: 0.2),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppConstants.smallRadius),
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.smallRadius,
+                    ),
                     borderSide: BorderSide(color: colors.primary, width: 1.5),
                   ),
                 ),
@@ -90,23 +95,28 @@ class LoginPanelForm extends StatelessWidget {
               TextFormField(
                 controller: passwordController,
                 obscureText: true,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: colors.onSurface),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: colors.onSurface),
                 decoration: InputDecoration(
                   labelText: 'Password',
-                  labelStyle: TextStyle(color: colors.onSurface.withOpacity(0.7)),
+                  labelStyle: TextStyle(
+                    color: colors.onSurface.withValues(alpha: 0.7),
+                  ),
                   filled: true,
-                  fillColor: colors.surface.withOpacity(0.8),
+                  fillColor: colors.surface.withValues(alpha: 0.8),
                   border: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppConstants.smallRadius),
-                    borderSide: BorderSide(color: colors.outline.withOpacity(0.2)),
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.smallRadius,
+                    ),
+                    borderSide: BorderSide(
+                      color: colors.outline.withValues(alpha: 0.2),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppConstants.smallRadius),
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.smallRadius,
+                    ),
                     borderSide: BorderSide(color: colors.primary, width: 1.5),
                   ),
                 ),
@@ -127,13 +137,13 @@ class LoginPanelForm extends StatelessWidget {
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                    borderRadius:
-                        BorderRadius.circular(AppConstants.smallRadius),
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.smallRadius,
+                    ),
                   ),
-                  textStyle: Theme.of(context)
-                      .textTheme
-                      .labelLarge
-                      ?.copyWith(color: Colors.white),
+                  textStyle: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(color: Colors.white),
                 ),
                 child: Text(buttonText),
               ),
@@ -145,10 +155,9 @@ class LoginPanelForm extends StatelessWidget {
                 onPressed: onFooterPressed,
                 child: Text(
                   footerText,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.copyWith(color: colors.onSurface.withOpacity(0.7)),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colors.onSurface.withValues(alpha: 0.7),
+                  ),
                 ),
               ),
             ],

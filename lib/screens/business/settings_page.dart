@@ -12,7 +12,7 @@ import 'package:walkinsalonapp/widgets/settings/logout_button.dart';
 
 // Services
 import 'package:walkinsalonapp/services/settings/firestore_settings_service.dart';
-import 'package:walkinsalonapp/services/settings/location_settings_service.dart';
+
 import 'package:walkinsalonapp/services/image_upload_service.dart';
 
 class BusinessSettingsPage extends StatefulWidget {
@@ -24,7 +24,6 @@ class BusinessSettingsPage extends StatefulWidget {
 
 class _BusinessSettingsPageState extends State<BusinessSettingsPage> {
   final _firestore = FirestoreService();
-  final _locationService = LocationService();
 
   bool _isSaving = false;
   bool _isLoading = true;
@@ -77,8 +76,9 @@ class _BusinessSettingsPageState extends State<BusinessSettingsPage> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Error loading data: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading data: $e')));
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -97,13 +97,17 @@ class _BusinessSettingsPageState extends State<BusinessSettingsPage> {
       String? uploadedCover;
 
       if (logoBytes != null) {
-        uploadedLogo =
-            await ImageUploadService.uploadImage(logoBytes, 'profile');
+        uploadedLogo = await ImageUploadService.uploadImage(
+          logoBytes,
+          'profile',
+        );
       }
 
       if (coverBytes != null) {
-        uploadedCover =
-            await ImageUploadService.uploadImage(coverBytes, 'cover');
+        uploadedCover = await ImageUploadService.uploadImage(
+          coverBytes,
+          'cover',
+        );
       }
 
       // Save business details to Firestore
@@ -119,10 +123,9 @@ class _BusinessSettingsPageState extends State<BusinessSettingsPage> {
       );
 
       // ✅ Only update email field in Firestore (not Firebase Auth)
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .update({'email': email.text.trim()});
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update(
+        {'email': email.text.trim()},
+      );
 
       // ✅ Update image version for cache-busting
       final newVersion = DateTime.now().millisecondsSinceEpoch;
@@ -169,18 +172,14 @@ class _BusinessSettingsPageState extends State<BusinessSettingsPage> {
     final isDark = theme.brightness == Brightness.dark;
 
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
-      backgroundColor:
-          isDark ? AppColors.darkBackground : AppColors.background,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.background,
       appBar: AppBar(
         title: const Text("Salon Profile & Settings"),
-        backgroundColor:
-            isDark ? AppColors.darkSurface : AppColors.primary,
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.primary,
       ),
       body: Stack(
         children: [
@@ -229,16 +228,18 @@ class _BusinessSettingsPageState extends State<BusinessSettingsPage> {
                       ? const Text("Saving...")
                       : const Text("Save Changes"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:
-                        isDark ? AppColors.darkSecondary : AppColors.primary,
+                    backgroundColor: isDark
+                        ? AppColors.darkSecondary
+                        : AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 24,
                       vertical: 12,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppConstants.borderRadius),
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.borderRadius,
+                      ),
                     ),
                   ),
                 ),

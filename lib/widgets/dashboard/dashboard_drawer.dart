@@ -2,11 +2,11 @@ import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:walkinsalonapp/pages/appointments_page.dart';
-import 'package:walkinsalonapp/pages/reviews_page.dart';
-import 'package:walkinsalonapp/pages/settings_page.dart';
-import 'package:walkinsalonapp/pages/barber_management_page.dart';
-import '../../buisness/discounts.dart';
+import 'package:walkinsalonapp/screens/business/appointments_page.dart';
+import 'package:walkinsalonapp/screens/business/reviews_page.dart';
+import 'package:walkinsalonapp/screens/business/settings_page.dart';
+import 'package:walkinsalonapp/screens/business/barber_management_page.dart';
+import '../../business_logic/discounts.dart';
 import 'package:walkinsalonapp/widgets/dashboard/drawer_item.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 
@@ -18,10 +18,12 @@ class DashboardDrawer extends StatefulWidget {
 }
 
 class _DashboardDrawerState extends State<DashboardDrawer> {
-  Color _accentColor = AppColors.darkTextPrimary.withOpacity(0.12);
+  Color _accentColor = AppColors.darkTextPrimary.withValues(alpha: 0.12);
 
   Color _deriveSafeAccent(String imageUrl) {
-    if (imageUrl.isEmpty) return AppColors.darkTextPrimary.withOpacity(0.12);
+    if (imageUrl.isEmpty) {
+      return AppColors.darkTextPrimary.withValues(alpha: 0.12);
+    }
     int hash = 0;
     for (int i = 0; i < imageUrl.length; i++) {
       hash = (hash + imageUrl.codeUnitAt(i)) & 0xFFFFFFFF;
@@ -51,7 +53,7 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
         if (!snapshot.hasData) {
           return Drawer(
             child: Container(
-              color: AppColors.darkTextPrimary.withOpacity(0.04),
+              color: AppColors.darkTextPrimary.withValues(alpha: 0.04),
               child: const Center(child: CircularProgressIndicator()),
             ),
           );
@@ -63,10 +65,12 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
         final salonName = (data['salonName'] ?? 'Your Salon') as String;
 
         final version = (data['imageVersion'] ?? 0).toString();
-        final bustedCoverUrl =
-            coverUrl.isNotEmpty ? '$coverUrl?v=$version' : '';
-        final bustedProfileUrl =
-            profileUrl.isNotEmpty ? '$profileUrl?v=$version' : '';
+        final bustedCoverUrl = coverUrl.isNotEmpty
+            ? '$coverUrl?v=$version'
+            : '';
+        final bustedProfileUrl = profileUrl.isNotEmpty
+            ? '$profileUrl?v=$version'
+            : '';
 
         _accentColor = _deriveSafeAccent(bustedCoverUrl);
 
@@ -82,26 +86,48 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
               decoration: BoxDecoration(
                 color: _accentColor,
                 border: Border.all(
-                    color: AppColors.darkTextPrimary.withOpacity(0.18)),
+                  color: AppColors.darkTextPrimary.withValues(alpha: 0.18),
+                ),
               ),
               child: ListView(
                 padding: EdgeInsets.zero,
                 children: [
                   _buildHeader(bustedCoverUrl, bustedProfileUrl, salonName),
                   Divider(
-                      color: AppColors.darkTextPrimary.withOpacity(0.24),
-                      indent: 12,
-                      endIndent: 12),
-                  buildDrawerItem(context, Icons.calendar_today_rounded,
-                      "Appointments", const AppointmentsPage()),
-                  buildDrawerItem(context, Icons.people_rounded,
-                      "Barber Management", const BarberManagementPage()),
-                  buildDrawerItem(context, Icons.discount_rounded, "Discounts",
-                      const DiscountsPage()),
-                  buildDrawerItem(context, Icons.reviews_rounded, "Reviews",
-                      const ReviewsPage()),
-                  buildDrawerItem(context, Icons.settings_rounded, "Settings",
-                      const BusinessSettingsPage()),
+                    color: AppColors.darkTextPrimary.withValues(alpha: 0.24),
+                    indent: 12,
+                    endIndent: 12,
+                  ),
+                  buildDrawerItem(
+                    context,
+                    Icons.calendar_today_rounded,
+                    "Appointments",
+                    const AppointmentsPage(),
+                  ),
+                  buildDrawerItem(
+                    context,
+                    Icons.people_rounded,
+                    "Barber Management",
+                    const BarberManagementPage(),
+                  ),
+                  buildDrawerItem(
+                    context,
+                    Icons.discount_rounded,
+                    "Discounts",
+                    const DiscountsPage(),
+                  ),
+                  buildDrawerItem(
+                    context,
+                    Icons.reviews_rounded,
+                    "Reviews",
+                    const ReviewsPage(),
+                  ),
+                  buildDrawerItem(
+                    context,
+                    Icons.settings_rounded,
+                    "Settings",
+                    const BusinessSettingsPage(),
+                  ),
                   const SizedBox(height: 20),
                 ],
               ),
@@ -114,10 +140,12 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
 
   Widget _buildHeader(String coverUrl, String profileUrl, String salonName) {
     final Widget cover = coverUrl.isNotEmpty
-        ? Image.network(coverUrl,
+        ? Image.network(
+            coverUrl,
             fit: BoxFit.cover,
             errorBuilder: (_, __, ___) =>
-                Image.asset(AppConfig.images.defaultCover, fit: BoxFit.cover))
+                Image.asset(AppConfig.images.defaultCover, fit: BoxFit.cover),
+          )
         : Image.asset(AppConfig.images.defaultCover, fit: BoxFit.cover);
 
     return DrawerHeader(
@@ -127,14 +155,16 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
         fit: StackFit.expand,
         children: [
           ClipRRect(
-            borderRadius: const BorderRadius.only(topRight: Radius.circular(24)),
+            borderRadius: const BorderRadius.only(
+              topRight: Radius.circular(24),
+            ),
             child: Stack(
               fit: StackFit.expand,
               children: [
                 cover,
                 BackdropFilter(
                   filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                  child: Container(color: Colors.black.withOpacity(0.2)),
+                  child: Container(color: Colors.black.withValues(alpha: 0.2)),
                 ),
                 Align(
                   alignment: Alignment.bottomCenter,
@@ -162,7 +192,7 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                     tag: 'profile-avatar',
                     child: CircleAvatar(
                       radius: 30,
-                      backgroundColor: Colors.white.withOpacity(0.8),
+                      backgroundColor: Colors.white.withValues(alpha: 0.8),
                       backgroundImage: profileUrl.isNotEmpty
                           ? NetworkImage(profileUrl)
                           : null,
@@ -177,13 +207,13 @@ class _DashboardDrawerState extends State<DashboardDrawer> {
                       salonName,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            shadows: const [
-                              Shadow(color: Colors.black54, blurRadius: 6)
-                            ],
-                          ),
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        shadows: const [
+                          Shadow(color: Colors.black54, blurRadius: 6),
+                        ],
+                      ),
                     ),
                   ),
                 ],

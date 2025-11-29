@@ -3,14 +3,12 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:walkinsalonapp/auth/login/auth_wrapper.dart';
 
 // 🧱 Core + Config
 import 'core/app_config.dart';
 import 'config/firebase_options.dart';
 import 'config/supabase_config.dart';
-
-// 🧭 Entry screens
-import 'package:walkinsalonapp/screens/business/widgets/splash_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,10 +18,7 @@ Future<void> main() async {
   await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
 
   // 🪣 Supabase
-  await Supabase.initialize(
-    url: supabaseUrl,
-    anonKey: supabaseAnonKey,
-  );
+  await Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
 
   // Optional warm-up delay (for splash smoothness)
   await Future.delayed(const Duration(milliseconds: 200));
@@ -56,7 +51,7 @@ class WalkInSalonApp extends StatelessWidget {
       ),
 
       // 🧭 Initial route (splash → auth)
-      home: const SplashScreen(),
+      home: const AuthWrapper(),
     );
   }
 }

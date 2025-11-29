@@ -97,11 +97,10 @@ class _SalonImagesSectionState extends State<SalonImagesSection> {
                   fit: BoxFit.cover,
                   image: _coverBytes != null
                       ? MemoryImage(_coverBytes!)
-                      : (widget.coverUrl != null &&
-                              widget.coverUrl!.isNotEmpty)
-                          ? NetworkImage(widget.coverUrl!)
-                          : AssetImage(AppConfig.images.defaultCover)
-                              as ImageProvider,
+                      : (widget.coverUrl != null && widget.coverUrl!.isNotEmpty)
+                      ? NetworkImage(widget.coverUrl!)
+                      : AssetImage(AppConfig.images.defaultCover)
+                            as ImageProvider,
                 ),
               ),
             ),
@@ -109,6 +108,7 @@ class _SalonImagesSectionState extends State<SalonImagesSection> {
               right: 10,
               bottom: 10,
               child: FloatingActionButton.small(
+                heroTag: "cover_image_picker_fab",
                 backgroundColor: AppColors.primary,
                 onPressed: () => _pickAndUpload('cover'),
                 child: const Icon(Icons.camera_alt, color: Colors.white),
@@ -128,11 +128,12 @@ class _SalonImagesSectionState extends State<SalonImagesSection> {
               backgroundImage: _logoBytes != null
                   ? MemoryImage(_logoBytes!)
                   : (widget.logoUrl != null && widget.logoUrl!.isNotEmpty)
-                      ? NetworkImage(widget.logoUrl!)
-                      : AssetImage(AppConfig.images.defaultProfile)
-                          as ImageProvider,
+                  ? NetworkImage(widget.logoUrl!)
+                  : AssetImage(AppConfig.images.defaultProfile)
+                        as ImageProvider,
             ),
             FloatingActionButton.small(
+              heroTag: "profile_image_picker_fab",
               backgroundColor: AppColors.primary,
               onPressed: () => _pickAndUpload('profile'),
               child: const Icon(Icons.edit, color: Colors.white),
