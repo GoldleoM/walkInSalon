@@ -101,9 +101,7 @@ class SalonCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 salon.salonName,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
+                                style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(fontWeight: FontWeight.bold),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -128,9 +126,7 @@ class SalonCard extends StatelessWidget {
                                   const SizedBox(width: 4),
                                   Text(
                                     salon.rating.toStringAsFixed(1),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
+                                    style: Theme.of(context).textTheme.bodySmall
                                         ?.copyWith(
                                           fontWeight: FontWeight.bold,
                                           color: AppColors.warning,
@@ -155,9 +151,7 @@ class SalonCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 "${salon.address}${distance != null ? ' • $distance' : ''}",
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
+                                style: Theme.of(context).textTheme.bodySmall
                                     ?.copyWith(
                                       color: AppConfig.adaptiveTextColor(
                                         context,
@@ -176,22 +170,6 @@ class SalonCard extends StatelessWidget {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTag(BuildContext context, String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppConfig.adaptiveTextColor(context).withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-          color: AppConfig.adaptiveTextColor(context).withValues(alpha: 0.7),
         ),
       ),
     );

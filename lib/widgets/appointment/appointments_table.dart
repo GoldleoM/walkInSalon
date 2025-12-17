@@ -12,6 +12,7 @@ class AppointmentsTable extends StatelessWidget {
   final FormatTimestamp formatTimeStamp;
   final StatusColor statusColor;
   final EditAppointmentCallback editAppointment;
+  final bool showActions; // Add parameter
 
   const AppointmentsTable({
     super.key,
@@ -19,7 +20,10 @@ class AppointmentsTable extends StatelessWidget {
     required this.formatTimeStamp,
     required this.statusColor,
     required this.editAppointment,
+    this.showActions = true, // Default to true
   });
+
+  // ... (methods)
 
   String _safeFormattedTime(Map<String, dynamic> data) {
     final dynamic maybeTs = data['startAt'];
@@ -49,8 +53,6 @@ class AppointmentsTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     if (docs.isEmpty) {
       return Padding(
         padding: AppConfig.padding,
@@ -76,28 +78,35 @@ class AppointmentsTable extends StatelessWidget {
           dataTextStyle: Theme.of(
             context,
           ).textTheme.bodyMedium?.copyWith(fontSize: 13),
-          columns: const [
-            DataColumn(label: Text('#')),
-            DataColumn(label: Text('Time')),
-            DataColumn(label: Text('Customer')),
-            DataColumn(label: Text('Barber')),
-            DataColumn(label: Text('Service')),
-            DataColumn(label: Text('Status')),
-            DataColumn(label: Text('Action')),
+          columns: [
+            const DataColumn(label: Text('#')),
+            const DataColumn(label: Text('Time')),
+            const DataColumn(label: Text('Customer')),
+            const DataColumn(label: Text('Barber')),
+            const DataColumn(label: Text('Service')),
+            const DataColumn(label: Text('Status')),
+            if (showActions) const DataColumn(label: Text('Action')),
           ],
           rows: List<DataRow>.generate(docs.length, (index) {
             final doc = docs[index];
             final data = doc.data() as Map<String, dynamic>? ?? {};
-            final id = doc.id;
 
             final timeText = _safeFormattedTime(data);
             final customer = (data['customerName'] ?? '-') as String;
-            final barber = (data['barberName'] ?? '-') as String;
-            final service = (data['service'] ?? '-') as String;
+            final barber =
+                (data['barberName'] ?? data['barberId'] ?? '-') as String;
+            final service =
+                (data['serviceName'] ?? data['service'] ?? '-') as String;
+
             final status = _safeStatus(data);
             final color = statusColor(status);
 
             return DataRow(
+              color: status == 'in_progress'
+                  ? WidgetStateProperty.all(
+                      AppColors.primary.withValues(alpha: 0.1),
+                    )
+                  : null,
               cells: [
                 DataCell(Text("${index + 1}")),
                 DataCell(Text(timeText)),
@@ -117,30 +126,73 @@ class AppointmentsTable extends StatelessWidget {
                       ),
                     ),
                     child: Text(
-                      status,
+                      status.replaceAll('_', ' ').toUpperCase(),
                       style: TextStyle(
                         color: color,
                         fontWeight: FontWeight.w600,
+                        fontSize: 11,
                       ),
                     ),
                   ),
                 ),
-                DataCell(
-                  IconButton(
-                    icon: Icon(
-                      Icons.edit,
-                      color: isDark
-                          ? AppColors.darkSecondary
-                          : AppColors.primary,
-                    ),
-                    onPressed: () => editAppointment(id, data),
-                  ),
-                ),
+                if (showActions) DataCell(_buildActions(context, doc, status)),
               ],
             );
           }),
         ),
       ),
+    );
+  }
+
+  Widget _buildActions(
+    BuildContext context,
+    QueryDocumentSnapshot doc,
+    String status,
+  ) {
+    status = status.toLowerCase();
+    final docId = doc.id;
+
+    // 1. Pending -> Accept / Decline
+    if (status == 'pending') {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            icon: const Icon(Icons.check_circle, color: Colors.green),
+            tooltip: 'Accept',
+            onPressed: () => editAppointment(docId, {'action': 'accept'}),
+          ),
+          IconButton(
+            icon: const Icon(Icons.cancel, color: Colors.red),
+            tooltip: 'Decline',
+            onPressed: () => editAppointment(docId, {'action': 'decline'}),
+          ),
+        ],
+      );
+    }
+
+    // 2. Confirmed / In Progress -> Open Session Timer
+    if (status == 'confirmed' || status == 'in_progress') {
+      return ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: status == 'in_progress'
+              ? Colors.orange
+              : AppColors.primary,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          minimumSize: const Size(0, 32),
+        ),
+        onPressed: () =>
+            editAppointment(docId, {'action': 'open_session', 'doc': doc}),
+        child: Text(status == 'in_progress' ? 'Resume' : 'Start'),
+      );
+    }
+
+    // 3. Completed -> View Summary (or just simple edit for now)
+    // 4. Cancelled/NoShow -> Just Edit
+    return IconButton(
+      icon: const Icon(Icons.edit, size: 20),
+      onPressed: () => editAppointment(docId, {}),
     );
   }
 }

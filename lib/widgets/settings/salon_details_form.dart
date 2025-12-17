@@ -8,6 +8,8 @@ class SalonDetailsForm extends StatefulWidget {
   final TextEditingController phone;
   final TextEditingController address;
   final TextEditingController email;
+  final TextEditingController openTime;
+  final TextEditingController closeTime;
   final Function(LatLng, String) onMapSelect;
 
   const SalonDetailsForm({
@@ -16,6 +18,8 @@ class SalonDetailsForm extends StatefulWidget {
     required this.phone,
     required this.address,
     required this.email,
+    required this.openTime,
+    required this.closeTime,
     required this.onMapSelect,
   });
 
@@ -25,6 +29,31 @@ class SalonDetailsForm extends StatefulWidget {
 
 class _SalonDetailsFormState extends State<SalonDetailsForm> {
   bool _isLoadingMap = false;
+
+  Future<void> _pickTime(TextEditingController controller) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null && mounted) {
+      setState(() {
+        controller.text = picked.format(context); // e.g. "9:00 AM"
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +76,41 @@ class _SalonDetailsFormState extends State<SalonDetailsForm> {
         TextField(
           controller: widget.address,
           decoration: const InputDecoration(labelText: 'Address'),
+        ),
+        const SizedBox(height: 12),
+        // 🕒 Operating Hours
+        Row(
+          children: [
+            Expanded(
+              child: GestureDetector(
+                onTap: () => _pickTime(widget.openTime),
+                child: AbsorbPointer(
+                  child: TextField(
+                    controller: widget.openTime,
+                    decoration: const InputDecoration(
+                      labelText: 'Open Time',
+                      suffixIcon: Icon(Icons.access_time),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: GestureDetector(
+                onTap: () => _pickTime(widget.closeTime),
+                child: AbsorbPointer(
+                  child: TextField(
+                    controller: widget.closeTime,
+                    decoration: const InputDecoration(
+                      labelText: 'Close Time',
+                      suffixIcon: Icon(Icons.access_time),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 10),
         ElevatedButton.icon(

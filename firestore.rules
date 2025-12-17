@@ -49,7 +49,11 @@ service cloud.firestore {
     match /businesses/{businessId} {
       allow read: if true;
       allow create: if isAuthenticated();
-      allow update, delete: if isOwner(businessId) && (isBusiness() || isBusinessPending());
+      // Allow owner to update everything
+      // Allow anyone (e.g. customers) to update ONLY rating fields
+      allow update: if (isOwner(businessId) && (isBusiness() || isBusinessPending())) || 
+                    (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['avgRating', 'totalReviews']));
+      allow delete: if isOwner(businessId) && (isBusiness() || isBusinessPending());
     }
 
     // 📅 Appointments Collection
@@ -57,9 +61,10 @@ service cloud.firestore {
     // Customers can read/update their own appointments
     // Businesses can read/update appointments for their salon
     match /appointments/{appointmentId} {
-      allow read: if isAuthenticated() && 
-        (resource.data.customerId == request.auth.uid || 
-         resource.data.businessId == request.auth.uid);
+      // 🔓 Allow all authenticated users to read appointments (Required for availability calculation)
+      // Note: In a production app with sensitive data, use a separate 'slots' collection or Cloud Functions
+      allow read: if isAuthenticated();
+      
       allow create: if isAuthenticated() && 
                       request.resource.data.customerId == request.auth.uid;
       allow update: if isAuthenticated() && 

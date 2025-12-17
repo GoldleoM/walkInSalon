@@ -74,6 +74,8 @@ class _DashboardBodyState extends State<DashboardBody> {
                         avgRating,
                         barbers.length,
                         isSalonOpen,
+                        (data['lifetimeBookings'] as num?)?.toInt() ?? 0,
+                        (data['totalRevenue'] as num?)?.toDouble() ?? 0.0,
                       ),
                       const SizedBox(height: 30),
 
@@ -211,56 +213,46 @@ Widget _buildStats(
   double avgRating,
   int barbersCount,
   bool isOpen,
+  int lifetimeBookings,
+  double totalRevenue,
 ) {
-  return StreamBuilder<QuerySnapshot>(
-    stream: FirebaseFirestore.instance
-        .collection('appointments')
-        .where('businessId', isEqualTo: uid)
-        .snapshots(),
-    builder: (context, snapshot) {
-      final totalBookings = snapshot.data?.docs.length ?? 0;
+  final cards = [
+    _glassStatCard(
+      context: context,
+      title: "Lifetime \nBookings",
+      value: "$lifetimeBookings",
+      icon: Icons.bookmark_added,
+      color: AppColors.primary,
+    ),
+    _glassStatCard(
+      context: context,
+      title: "Total \nRevenue",
+      value: "₹${totalRevenue.toStringAsFixed(0)}",
+      icon: Icons.attach_money,
+      color: AppColors.success,
+    ),
+    _glassStatCard(
+      context: context,
+      title: "Avg \nRating",
+      value: "${avgRating.toStringAsFixed(1)} ⭐",
+      icon: Icons.star,
+      color: AppColors.warning,
+    ),
+    _glassStatusCard(context, uid, isOpen),
+  ];
 
-      final cards = [
-        _glassStatCard(
-          context: context,
-          title: "Total Bookings",
-          value: "$totalBookings",
-          icon: Icons.calendar_today,
-          color: AppColors.primary,
-        ),
-        _glassStatCard(
-          context: context,
-          title: "Avg Rating",
-          value: "${avgRating.toStringAsFixed(1)} ⭐",
-          icon: Icons.star,
-          color: AppColors.warning,
-        ),
-        _glassStatCard(
-          context: context,
-          title: "Total Barbers",
-          value: "$barbersCount",
-          icon: Icons.people,
-          color: AppColors.secondary,
-        ),
-        _glassStatusCard(context, uid, isOpen),
-      ];
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final isWide = constraints.maxWidth > 900;
+      final crossAxisCount = isWide ? 4 : (constraints.maxWidth > 600 ? 2 : 2);
+      final cardWidth = (constraints.maxWidth / crossAxisCount) - 15;
 
-      return LayoutBuilder(
-        builder: (context, constraints) {
-          final isWide = constraints.maxWidth > 900;
-          final crossAxisCount = isWide
-              ? 4
-              : (constraints.maxWidth > 600 ? 2 : 1);
-          final cardWidth = (constraints.maxWidth / crossAxisCount) - 20;
-
-          return Wrap(
-            spacing: 20,
-            runSpacing: 20,
-            children: cards
-                .map((c) => SizedBox(width: cardWidth, child: c))
-                .toList(),
-          );
-        },
+      return Wrap(
+        spacing: 15,
+        runSpacing: 15,
+        children: cards
+            .map((c) => SizedBox(width: cardWidth, child: c))
+            .toList(),
       );
     },
   );

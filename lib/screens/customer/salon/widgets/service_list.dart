@@ -62,7 +62,7 @@ class ServiceList extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  "\$${service['price'] ?? '0'}",
+                  "₹${service['price'] ?? '0'}",
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppColors.primary,

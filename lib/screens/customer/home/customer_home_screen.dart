@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:walkinsalonapp/models/salon_model.dart';
 import 'package:walkinsalonapp/screens/customer/home/location_selection_screen.dart';
+import 'package:walkinsalonapp/auth/login/login_page.dart';
 import 'package:walkinsalonapp/screens/customer/home/widgets/salon_card.dart';
 import 'package:walkinsalonapp/screens/customer/salon/salon_details_screen.dart';
 import 'package:walkinsalonapp/screens/customer/bookings/my_bookings_screen.dart';
@@ -156,7 +157,7 @@ class _CustomerHomeContentState extends State<CustomerHomeContent> {
       final matchesSearch =
           salon.salonName.toLowerCase().contains(_searchQuery) ||
           salon.address.toLowerCase().contains(_searchQuery);
-      
+
       // City filter
       final matchesCity =
           _currentCity == 'Select Location' ||
@@ -180,17 +181,17 @@ class _CustomerHomeContentState extends State<CustomerHomeContent> {
 
       // Show if searching OR (Category Match AND (City Match OR Within Radius))
       // Allowing distance to override mismatching city names (e.g. Jaipur vs Jaipur Rural)
-      
+
       if (_selectedCategory == 'All') {
         return matchesSearch && (matchesCity || withinRadius);
       }
-      
+
       final matchesCategory = salon.services.any(
         (s) => s['name'].toString().toLowerCase().contains(
           _selectedCategory.toLowerCase(),
         ),
       );
-      
+
       return matchesSearch && matchesCategory && (matchesCity || withinRadius);
     }).toList();
 
@@ -222,6 +223,14 @@ class _CustomerHomeContentState extends State<CustomerHomeContent> {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Trending: Most bookings
+    final trendingSalons = List<SalonModel>.from(_allSalons)
+      ..sort((a, b) => b.lifetimeBookings.compareTo(a.lifetimeBookings));
+
+    // 2. Top Rated: Best rating
+    final topRatedSalons = List<SalonModel>.from(_allSalons)
+      ..sort((a, b) => b.rating.compareTo(a.rating));
+
     return Scaffold(
       backgroundColor: AppConfig.adaptiveBackground(context),
       appBar: AppBar(
@@ -262,14 +271,25 @@ class _CustomerHomeContentState extends State<CustomerHomeContent> {
             color: AppConfig.adaptiveTextColor(context),
             onPressed: () {},
           ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            color: AppConfig.adaptiveTextColor(context),
-            onPressed: () async => await FirebaseAuth.instance.signOut(),
-          ),
+          if (FirebaseAuth.instance.currentUser != null)
+            IconButton(
+              icon: const Icon(Icons.logout),
+              color: AppConfig.adaptiveTextColor(context),
+              onPressed: () async => await FirebaseAuth.instance.signOut(),
+            )
+          else
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                );
+              },
+              child: const Text('Login'),
+            ),
         ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -294,6 +314,83 @@ class _CustomerHomeContentState extends State<CustomerHomeContent> {
               ),
             ),
             const SizedBox(height: 24),
+
+            // 🔥 Trending Section (Only show if no search/filter active)
+            if (_searchQuery.isEmpty &&
+                _selectedCategory == 'All' &&
+                trendingSalons.isNotEmpty) ...[
+              Text(
+                "Trending Now 🔥",
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 280,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: trendingSalons.take(5).length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 16),
+                  itemBuilder: (context, index) {
+                    final salon = trendingSalons[index];
+                    return SizedBox(
+                      width: 260, // Fixed width for horizontal cards
+                      child: SalonCard(
+                        salon: salon,
+                        distance: _calculateDistance(salon),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SalonDetailsScreen(salon: salon),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+
+            // ⭐ Top Rated Section
+            if (_searchQuery.isEmpty &&
+                _selectedCategory == 'All' &&
+                topRatedSalons.isNotEmpty) ...[
+              Text(
+                "Top Rated ⭐",
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 280,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: topRatedSalons.take(5).length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 16),
+                  itemBuilder: (context, index) {
+                    final salon = topRatedSalons[index];
+                    return SizedBox(
+                      width: 260,
+                      child: SalonCard(
+                        salon: salon,
+                        distance: _calculateDistance(salon),
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => SalonDetailsScreen(salon: salon),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+
             // Category chips
             SizedBox(
               height: 40,
@@ -309,84 +406,61 @@ class _CustomerHomeContentState extends State<CustomerHomeContent> {
               ),
             ),
             const SizedBox(height: 24),
-            // Salon list
-            Expanded(
-              child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _filteredSalons.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.store_mall_directory,
-                            size: 64,
-                            color: AppColors.secondary.withValues(alpha: 0.5),
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'No salons found in $_currentCity.',
-                            style: Theme.of(context).textTheme.bodyLarge
-                                ?.copyWith(color: AppColors.secondary),
-                          ),
-                          TextButton(
-                            onPressed: _openLocationSelection,
-                            child: const Text('Change Location'),
-                          ),
-                        ],
-                      ),
-                    )
-                  : LayoutBuilder(
-                      builder: (context, constraints) {
-                        if (constraints.maxWidth > 600) {
-                          // Tablet/Desktop: Grid Layout
-                          return GridView.builder(
-                            gridDelegate:
-                                const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              childAspectRatio: 1.2, // Adjust card height
-                              crossAxisSpacing: 20,
-                              mainAxisSpacing: 20,
-                            ),
-                            itemCount: _filteredSalons.length,
-                            itemBuilder: (c, i) {
-                              final salon = _filteredSalons[i];
-                              return SalonCard(
-                                salon: salon,
-                                distance: _calculateDistance(salon),
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        SalonDetailsScreen(salon: salon),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        } else {
-                          // Mobile: List Layout
-                          return ListView.builder(
-                            itemCount: _filteredSalons.length,
-                            itemBuilder: (c, i) {
-                              final salon = _filteredSalons[i];
-                              return SalonCard(
-                                salon: salon,
-                                distance: _calculateDistance(salon),
-                                onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        SalonDetailsScreen(salon: salon),
-                                  ),
-                                ),
-                              );
-                            },
-                          );
-                        }
-                      },
-                    ),
+            // Salon list (Original filtered list)
+            Text(
+              "All Salons",
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
             ),
+            const SizedBox(height: 12),
+            _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _filteredSalons.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.store_mall_directory,
+                          size: 64,
+                          color: AppColors.secondary.withValues(alpha: 0.5),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'No salons found in $_currentCity.',
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(color: AppColors.secondary),
+                        ),
+                        TextButton(
+                          onPressed: _openLocationSelection,
+                          child: const Text('Change Location'),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    physics:
+                        const NeverScrollableScrollPhysics(), // Nested in SingleChildScrollView
+                    shrinkWrap: true,
+                    itemCount: _filteredSalons.length,
+                    itemBuilder: (c, i) {
+                      final salon = _filteredSalons[i];
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        child: SalonCard(
+                          salon: salon,
+                          distance: _calculateDistance(salon),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SalonDetailsScreen(salon: salon),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
           ],
         ),
       ),

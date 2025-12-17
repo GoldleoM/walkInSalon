@@ -16,7 +16,6 @@ import 'package:walkinsalonapp/widgets/dialogs/services/add_service_dialog.dart'
 import 'package:walkinsalonapp/widgets/dashboard/service_list_item.dart';
 import 'package:google_fonts/google_fonts.dart'; // Ensure font consistency
 
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:walkinsalonapp/providers/image_upload_provider.dart';
 
@@ -24,7 +23,8 @@ class BusinessSettingsPage extends ConsumerStatefulWidget {
   const BusinessSettingsPage({super.key});
 
   @override
-  ConsumerState<BusinessSettingsPage> createState() => _BusinessSettingsPageState();
+  ConsumerState<BusinessSettingsPage> createState() =>
+      _BusinessSettingsPageState();
 }
 
 class _BusinessSettingsPageState extends ConsumerState<BusinessSettingsPage> {
@@ -37,6 +37,8 @@ class _BusinessSettingsPageState extends ConsumerState<BusinessSettingsPage> {
   final phone = TextEditingController();
   final address = TextEditingController();
   final email = TextEditingController();
+  final openTime = TextEditingController();
+  final closeTime = TextEditingController();
 
   LatLng? selectedLocation;
   String? logoUrl;
@@ -66,6 +68,8 @@ class _BusinessSettingsPageState extends ConsumerState<BusinessSettingsPage> {
         salonName.text = business['salonName'] ?? '';
         phone.text = business['phone'] ?? '';
         address.text = business['address'] ?? '';
+        openTime.text = business['openTime'] ?? '09:00 AM';
+        closeTime.text = business['closeTime'] ?? '08:00 PM';
         email.text = userData['email'] ?? user.email ?? '';
 
         // ✅ Add cache-busting for image URLs
@@ -83,7 +87,9 @@ class _BusinessSettingsPageState extends ConsumerState<BusinessSettingsPage> {
 
         _services.clear();
         if (business['services'] != null) {
-          _services.addAll(List<Map<String, dynamic>>.from(business['services']));
+          _services.addAll(
+            List<Map<String, dynamic>>.from(business['services']),
+          );
         }
       });
     } catch (e) {
@@ -133,17 +139,15 @@ class _BusinessSettingsPageState extends ConsumerState<BusinessSettingsPage> {
       String? uploadedCover;
 
       if (logoBytes != null) {
-        uploadedLogo = await ref.read(imageUploadServiceProvider).uploadImage(
-          logoBytes,
-          'profile',
-        );
+        uploadedLogo = await ref
+            .read(imageUploadServiceProvider)
+            .uploadImage(logoBytes, 'profile');
       }
 
       if (coverBytes != null) {
-        uploadedCover = await ref.read(imageUploadServiceProvider).uploadImage(
-          coverBytes,
-          'cover',
-        );
+        uploadedCover = await ref
+            .read(imageUploadServiceProvider)
+            .uploadImage(coverBytes, 'cover');
       }
 
       // Save business details to Firestore
@@ -156,6 +160,8 @@ class _BusinessSettingsPageState extends ConsumerState<BusinessSettingsPage> {
         longitude: selectedLocation?.longitude,
         logoUrl: uploadedLogo ?? logoUrl,
         coverUrl: uploadedCover ?? coverUrl,
+        openTime: openTime.text.trim(),
+        closeTime: closeTime.text.trim(),
         services: _services,
       );
 
@@ -247,6 +253,8 @@ class _BusinessSettingsPageState extends ConsumerState<BusinessSettingsPage> {
                   phone: phone,
                   address: address,
                   email: email,
+                  openTime: openTime,
+                  closeTime: closeTime,
                   onMapSelect: (loc, addr) {
                     if (!mounted) return;
                     setState(() {
@@ -271,7 +279,10 @@ class _BusinessSettingsPageState extends ConsumerState<BusinessSettingsPage> {
                     ),
                     IconButton(
                       onPressed: _addService,
-                      icon: const Icon(Icons.add_circle, color: AppColors.primary),
+                      icon: const Icon(
+                        Icons.add_circle,
+                        color: AppColors.primary,
+                      ),
                       tooltip: "Add Service",
                     ),
                   ],
@@ -282,7 +293,9 @@ class _BusinessSettingsPageState extends ConsumerState<BusinessSettingsPage> {
                     padding: const EdgeInsets.all(20),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: AppConfig.adaptiveSurface(context).withValues(alpha: 0.5),
+                      color: AppConfig.adaptiveSurface(
+                        context,
+                      ).withValues(alpha: 0.5),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
                         color: theme.dividerColor.withValues(alpha: 0.1),
@@ -292,7 +305,9 @@ class _BusinessSettingsPageState extends ConsumerState<BusinessSettingsPage> {
                       "No services added yet.\nTap + to add your first service.",
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: AppConfig.adaptiveTextColor(context).withValues(alpha: 0.5),
+                        color: AppConfig.adaptiveTextColor(
+                          context,
+                        ).withValues(alpha: 0.5),
                       ),
                     ),
                   )

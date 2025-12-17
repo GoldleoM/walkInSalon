@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart'; // Unused
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -30,7 +30,8 @@ class BusinessDetailsPage extends ConsumerStatefulWidget {
   const BusinessDetailsPage({super.key});
 
   @override
-  ConsumerState<BusinessDetailsPage> createState() => _BusinessDetailsPageState();
+  ConsumerState<BusinessDetailsPage> createState() =>
+      _BusinessDetailsPageState();
 }
 
 class _BusinessDetailsPageState extends ConsumerState<BusinessDetailsPage> {
@@ -140,7 +141,7 @@ class _BusinessDetailsPageState extends ConsumerState<BusinessDetailsPage> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) throw Exception("User not logged in.");
-      final uid = user.uid;
+      // final uid = user.uid; // Unused
 
       String? profileUrl;
       String? coverUrl;

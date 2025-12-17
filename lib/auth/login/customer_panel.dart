@@ -9,7 +9,8 @@ import 'package:walkinsalonapp/auth/password/forgot_password_screen.dart';
 import 'package:walkinsalonapp/auth/login/auth_wrapper.dart';
 
 class CustomerPanel extends ConsumerStatefulWidget {
-  const CustomerPanel({super.key});
+  final VoidCallback? onLoginSuccess;
+  const CustomerPanel({super.key, this.onLoginSuccess});
 
   @override
   ConsumerState<CustomerPanel> createState() => _CustomerPanelState();
@@ -44,9 +45,9 @@ class _CustomerPanelState extends ConsumerState<CustomerPanel> {
     setState(() => _isLoading = false);
 
     if (result['success']) {
-      // 🔄 Force refresh role & navigate to AuthWrapper to re-route
+      // 🔄 Force refresh role
       ref.invalidate(currentUserRoleProvider);
-      
+
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -56,12 +57,17 @@ class _CustomerPanelState extends ConsumerState<CustomerPanel> {
         ),
       );
 
-      // Reset to AuthWrapper to handle routing based on new state
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const AuthWrapper()),
-        (route) => false,
-      );
+      // ✅ Use callback if provided (e.g. Booking interception)
+      if (widget.onLoginSuccess != null) {
+        widget.onLoginSuccess!();
+      } else {
+        // Reset to AuthWrapper to handle routing based on new state
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const AuthWrapper()),
+          (route) => false,
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -104,6 +110,8 @@ class _CustomerPanelState extends ConsumerState<CustomerPanel> {
           // ✉️ Email Field
           TextFormField(
             controller: _emailController,
+            autofocus: true,
+            textInputAction: TextInputAction.next,
             keyboardType: TextInputType.emailAddress,
             style: TextStyle(color: colors.onSurface),
             decoration: InputDecoration(
@@ -136,6 +144,8 @@ class _CustomerPanelState extends ConsumerState<CustomerPanel> {
           TextFormField(
             controller: _passwordController,
             obscureText: _obscurePassword,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => _loginCustomer(),
             style: TextStyle(color: colors.onSurface),
             decoration: InputDecoration(
               hintText: "Password",

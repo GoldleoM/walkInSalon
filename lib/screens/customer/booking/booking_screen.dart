@@ -3,6 +3,11 @@ import 'package:intl/intl.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:walkinsalonapp/models/salon_model.dart';
 import 'package:walkinsalonapp/screens/customer/booking/payment_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:walkinsalonapp/auth/login/login_page.dart';
+import 'package:walkinsalonapp/models/booking_model.dart';
+import 'package:walkinsalonapp/services/time_slot_service.dart';
 
 class BookingScreen extends StatefulWidget {
   final SalonModel salon;
@@ -18,26 +23,69 @@ class _BookingScreenState extends State<BookingScreen> {
   DateTime _selectedDate = DateTime.now();
   String? _selectedTime;
   String? _selectedBarberId;
+  List<String> _availableTimeSlots = [];
+  bool _isLoadingSlots = false;
 
-  // Mock time slots
-  final List<String> _timeSlots = [
-    "09:00 AM",
-    "09:30 AM",
-    "10:00 AM",
-    "10:30 AM",
-    "11:00 AM",
-    "11:30 AM",
-    "12:00 PM",
-    "12:30 PM",
-    "02:00 PM",
-    "02:30 PM",
-    "03:00 PM",
-    "03:30 PM",
-    "04:00 PM",
-    "04:30 PM",
-    "05:00 PM",
-    "05:30 PM",
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchAvailableSlots();
+  }
+
+  Future<void> _fetchAvailableSlots() async {
+    setState(() {
+      _isLoadingSlots = true;
+      _selectedTime = null; // Reset selection when slots change
+    });
+
+    try {
+      // 1. Fetch existing bookings for this date and salon
+      // We'll fetch the whole day's bookings to be safe
+      final startOfDay = DateTime(
+        _selectedDate.year,
+        _selectedDate.month,
+        _selectedDate.day,
+      );
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      final snapshot = await FirebaseFirestore.instance
+          .collection('appointments')
+          .where('businessId', isEqualTo: widget.salon.uid)
+          .where('startAt', isGreaterThanOrEqualTo: startOfDay)
+          .where('startAt', isLessThan: endOfDay)
+          //.where('status', whereIn: ['pending', 'confirmed']) // REMOVED: Fetch all to let Service handle 'completed' logic
+          .get();
+
+      final existingBookings = snapshot.docs
+          .map((doc) => BookingModel.fromMap(doc.data(), doc.id))
+          .toList();
+
+      // 2. Generate slots
+      final slots = TimeSlotService.generateAvailableSlots(
+        date: _selectedDate,
+        salon: widget.salon,
+        serviceDurationMinutes:
+            int.tryParse(widget.service['duration'].toString()) ?? 30,
+        existingBookings: existingBookings,
+        selectedBarberId: _selectedBarberId,
+      );
+
+      if (mounted) {
+        setState(() {
+          _availableTimeSlots = slots;
+          _isLoadingSlots = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching slots: $e");
+      if (mounted) {
+        setState(() {
+          _availableTimeSlots = [];
+          _isLoadingSlots = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +125,7 @@ class _BookingScreenState extends State<BookingScreen> {
                       setState(() {
                         _selectedDate = date;
                         _selectedTime = null; // Reset time on date change
+                        _fetchAvailableSlots();
                       });
                     },
                     child: Container(
@@ -127,6 +176,126 @@ class _BookingScreenState extends State<BookingScreen> {
             ),
             const SizedBox(height: 24),
 
+            // 💈 Barber Selection
+            if (widget.salon.barbers.isNotEmpty) ...[
+              Text(
+                "Select Professional",
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                height: 110,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: widget.salon.barbers.length + 1, // +1 for "Any"
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(width: 16),
+                  itemBuilder: (context, index) {
+                    if (index == 0) {
+                      // "Any Professional" Option
+                      final isSelected = _selectedBarberId == null;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedBarberId = null;
+                          });
+                          _fetchAvailableSlots();
+                        },
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppConfig.adaptiveSurface(context),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.primary
+                                      : Colors.grey.withValues(alpha: 0.3),
+                                  width: 2,
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.people,
+                                color: isSelected ? Colors.white : Colors.grey,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Any",
+                              style: TextStyle(
+                                fontWeight: isSelected
+                                    ? FontWeight.bold
+                                    : FontWeight.normal,
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : AppConfig.adaptiveTextColor(context),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    final barber = widget.salon.barbers[index - 1];
+                    final isSelected = _selectedBarberId == barber['name'];
+
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedBarberId = barber['name'];
+                        });
+                        _fetchAvailableSlots();
+                      },
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppConfig.adaptiveSurface(context),
+                              border: Border.all(
+                                color: isSelected
+                                    ? AppColors.primary
+                                    : Colors.transparent,
+                                width: 2,
+                              ),
+                              image: DecorationImage(
+                                image: NetworkImage(
+                                  barber['profileImage'] ??
+                                      'https://ui-avatars.com/api/?name=${barber['name']}',
+                                ),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            barber['name'] ?? "Unknown",
+                            style: TextStyle(
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppConfig.adaptiveTextColor(context),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
             // ⏰ Time Selection
             Text(
               "Select Time",
@@ -135,88 +304,71 @@ class _BookingScreenState extends State<BookingScreen> {
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 2.5,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-              ),
-              itemCount: _timeSlots.length,
-              itemBuilder: (context, index) {
-                final time = _timeSlots[index];
-                final isSelected = time == _selectedTime;
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedTime = time;
-                    });
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.primary
-                          : AppConfig.adaptiveSurface(context),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: isSelected
-                            ? AppColors.primary
-                            : AppColors.border,
-                      ),
-                    ),
+            _isLoadingSlots
+                ? const Center(child: CircularProgressIndicator())
+                : _availableTimeSlots.isEmpty
+                ? Container(
+                    padding: const EdgeInsets.all(20),
                     alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Text(
-                      time,
+                      "No available slots for this date/barber.",
                       style: TextStyle(
-                        color: isSelected
-                            ? Colors.white
-                            : AppConfig.adaptiveTextColor(context),
-                        fontWeight: FontWeight.w500,
+                        color: AppConfig.adaptiveTextColor(
+                          context,
+                        ).withValues(alpha: 0.6),
                       ),
                     ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 24),
-
-            // 💈 Barber Selection (Optional override)
-            if (widget.salon.barbers.isNotEmpty) ...[
-              Text(
-                "Select Barber (Optional)",
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: widget.salon.barbers.map((barber) {
-                  final isSelected =
-                      barber['name'] ==
-                      _selectedBarberId; // Using name as ID for now
-                  return ChoiceChip(
-                    label: Text(barber['name'] ?? "Unknown"),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        _selectedBarberId = selected ? barber['name'] : null;
-                      });
+                  )
+                : GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 2.5,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                        ),
+                    itemCount: _availableTimeSlots.length,
+                    itemBuilder: (context, index) {
+                      final time = _availableTimeSlots[index];
+                      final isSelected = time == _selectedTime;
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _selectedTime = time;
+                          });
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppColors.primary
+                                : AppConfig.adaptiveSurface(context),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppColors.primary
+                                  : AppColors.border,
+                            ),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            time,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppConfig.adaptiveTextColor(context),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      );
                     },
-                    selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                    labelStyle: TextStyle(
-                      color: isSelected
-                          ? AppColors.primary
-                          : AppConfig.adaptiveTextColor(context),
-                    ),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 24),
-            ],
+                  ),
           ],
         ),
       ),
@@ -248,7 +400,7 @@ class _BookingScreenState extends State<BookingScreen> {
                     ),
                   ),
                   Text(
-                    "\$${widget.service['price'] ?? '0'}",
+                    "₹${widget.service['price'] ?? '0'}",
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppColors.primary,
@@ -260,18 +412,44 @@ class _BookingScreenState extends State<BookingScreen> {
               ElevatedButton(
                 onPressed: _selectedTime != null
                     ? () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => PaymentScreen(
-                              salon: widget.salon,
-                              service: widget.service,
-                              date: _selectedDate,
-                              time: _selectedTime!,
-                              barberName: _selectedBarberId,
+                        if (FirebaseAuth.instance.currentUser == null) {
+                          // Not logged in -> Show Login, then return
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LoginPage(
+                                onLoginSuccess: () {
+                                  // 🎯 Login success!
+                                  Navigator.pop(context); // Close Login Page
+                                  // Now user is back on BookingScreen, but logged in
+                                  // We can optionally auto-advance, but let's let them click Continue again
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Login successful! You can now proceed.',
+                                      ),
+                                      duration: Duration(seconds: 2),
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
-                          ),
-                        );
+                          );
+                        } else {
+                          // Allow booking
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => PaymentScreen(
+                                salon: widget.salon,
+                                service: widget.service,
+                                date: _selectedDate,
+                                time: _selectedTime!,
+                                barberName: _selectedBarberId,
+                              ),
+                            ),
+                          );
+                        }
                       }
                     : null,
                 style: ElevatedButton.styleFrom(

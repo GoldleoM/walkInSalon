@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
@@ -6,6 +5,7 @@ import 'package:walkinsalonapp/models/salon_model.dart';
 import 'package:walkinsalonapp/screens/customer/salon/widgets/barber_selector.dart';
 import 'package:walkinsalonapp/screens/customer/salon/widgets/service_list.dart';
 import 'package:walkinsalonapp/screens/customer/booking/booking_screen.dart';
+import 'package:walkinsalonapp/auth/login/login_page.dart';
 
 class SalonDetailsScreen extends StatelessWidget {
   final SalonModel salon;
@@ -75,8 +75,9 @@ class SalonDetailsScreen extends StatelessWidget {
                           ),
                           child: CircleAvatar(
                             radius: 35, // Bigger size (70px)
-                            backgroundImage:
-                                NetworkImage(salon.profileImageUrl!),
+                            backgroundImage: NetworkImage(
+                              salon.profileImageUrl!,
+                            ),
                             backgroundColor: Colors.grey.shade200,
                           ),
                         ),
@@ -87,9 +88,7 @@ class SalonDetailsScreen extends StatelessWidget {
                           children: [
                             Text(
                               salon.salonName,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
+                              style: Theme.of(context).textTheme.headlineMedium
                                   ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 24,
@@ -187,13 +186,7 @@ class SalonDetailsScreen extends StatelessWidget {
                 return ServiceList(
                   services: salon.services,
                   onServiceSelected: (service) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            BookingScreen(salon: salon, service: service),
-                      ),
-                    );
+                    _handleBooking(context, service);
                   },
                 );
               }
@@ -237,15 +230,44 @@ class SalonDetailsScreen extends StatelessWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showReviewDialog(context);
-        },
-        backgroundColor: AppConfig.adaptiveSurface(context),
-        foregroundColor: AppConfig.adaptiveTextColor(context),
-        child: const Icon(Icons.rate_review),
-      ),
     );
+  }
+
+  void _handleBooking(BuildContext context, Map<String, dynamic> service) {
+    if (FirebaseAuth.instance.currentUser != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => BookingScreen(salon: salon, service: service),
+        ),
+      );
+    } else {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text("Login Required"),
+          content: const Text(
+            "You need to log in or sign up to book an appointment.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                );
+              },
+              child: const Text("Log In / Sign Up"),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   void _showServiceSelection(BuildContext context) {
@@ -285,18 +307,12 @@ class SalonDetailsScreen extends StatelessWidget {
                       return ListTile(
                         title: Text(service['name'] ?? 'Unknown Service'),
                         subtitle: Text(
-                          "\$${service['price'] ?? '0'} • ${service['duration'] ?? '30'} min",
+                          "₹${service['price'] ?? '0'} • ${service['duration'] ?? '30'} min",
                         ),
                         trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                         onTap: () {
                           Navigator.pop(context); // Close modal
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  BookingScreen(salon: salon, service: service),
-                            ),
-                          );
+                          _handleBooking(context, service);
                         },
                       );
                     },
@@ -304,106 +320,6 @@ class SalonDetailsScreen extends StatelessWidget {
                 ),
             ],
           ),
-        );
-      },
-    );
-  }
-
-  void _showReviewDialog(BuildContext context) {
-    final TextEditingController commentController = TextEditingController();
-    double rating = 5.0;
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text("Write a Review"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text("Rate your experience:"),
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (index) {
-                      return IconButton(
-                        icon: Icon(
-                          index < rating ? Icons.star : Icons.star_border,
-                          color: AppColors.warning,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            rating = index + 1.0;
-                          });
-                        },
-                      );
-                    }),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: commentController,
-                    decoration: const InputDecoration(
-                      hintText: "Share your thoughts...",
-                      border: OutlineInputBorder(),
-                    ),
-                    maxLines: 3,
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel"),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (commentController.text.isEmpty) return;
-
-                    try {
-                      final user = FirebaseAuth.instance.currentUser;
-                      if (user == null) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Please login to review"),
-                          ),
-                        );
-                        return;
-                      }
-
-                      await FirebaseFirestore.instance
-                          .collection('reviews')
-                          .add({
-                            'businessId': salon.uid,
-                            'customerId': user.uid,
-                            'customerName': user.displayName ?? 'Anonymous',
-                            'rating': rating,
-                            'comment': commentController.text,
-                            'createdAt': FieldValue.serverTimestamp(),
-                          });
-
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Review submitted!")),
-                        );
-                      }
-                    } catch (e) {
-                      debugPrint("Error submitting review: $e");
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(
-                          context,
-                        ).showSnackBar(SnackBar(content: Text("Error: $e")));
-                      }
-                    }
-                  },
-                  child: const Text("Submit"),
-                ),
-              ],
-            );
-          },
         );
       },
     );

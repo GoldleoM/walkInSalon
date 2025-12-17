@@ -1,22 +1,97 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 
-class RevenueChart extends StatelessWidget {
+class RevenueChart extends StatefulWidget {
   const RevenueChart({super.key});
 
   @override
+  State<RevenueChart> createState() => _RevenueChartState();
+}
+
+class _RevenueChartState extends State<RevenueChart> {
+  List<ChartData> _chartData = [];
+  bool _isLoading = true;
+  double _totalRevenue = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchWeeklyRevenue();
+  }
+
+  Future<void> _fetchWeeklyRevenue() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final now = DateTime.now();
+    final weekAgo = now.subtract(const Duration(days: 7));
+
+    try {
+      final snapshot = await FirebaseFirestore.instance
+          .collection('appointments')
+          .where('businessId', isEqualTo: uid)
+          .where('startAt', isGreaterThanOrEqualTo: Timestamp.fromDate(weekAgo))
+          .get();
+
+      final docs = snapshot.docs;
+      double total = 0;
+
+      // Group by Day
+      // Note: We need to initialize the map with 0.0 for the last 7 days to show empty days.
+      Map<int, double> revenueByDayIndex = {}; // 1=Mon, 7=Sun
+
+      for (var doc in docs) {
+        final data = doc.data();
+        if (data['status'] == 'completed') {
+          // Only count completed!
+          // But 'status' filter is not in query (requires composite index).
+          // We filter locally.
+          final price = (data['totalPrice'] as num?)?.toDouble() ?? 0.0;
+          final date = (data['startAt'] as Timestamp).toDate();
+          final dayIndex = date.weekday; // 1..7
+
+          revenueByDayIndex[dayIndex] =
+              (revenueByDayIndex[dayIndex] ?? 0) + price;
+          total += price;
+        }
+      }
+
+      // Prepare Chart Data (Ordered from 6 days ago to Today)
+      List<ChartData> preparedData = [];
+      const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+      for (int i = 6; i >= 0; i--) {
+        final date = now.subtract(Duration(days: i));
+        final dayIndex = date.weekday;
+        final revenue = revenueByDayIndex[dayIndex] ?? 0.0;
+        preparedData.add(ChartData(weekdays[dayIndex - 1], revenue));
+      }
+
+      if (mounted) {
+        setState(() {
+          _chartData = preparedData;
+          _totalRevenue = total;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching revenue: $e");
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Dummy data for the last 7 days
-    final List<ChartData> chartData = [
-      ChartData('Mon', 150),
-      ChartData('Tue', 280),
-      ChartData('Wed', 220),
-      ChartData('Thu', 450),
-      ChartData('Fri', 380),
-      ChartData('Sat', 520),
-      ChartData('Sun', 480),
-    ];
+    if (_isLoading) {
+      return Container(
+        height: 300,
+        decoration: AppDecorations.glassPanel(context),
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Container(
       height: 300,
@@ -40,7 +115,7 @@ class RevenueChart extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    "Last 7 days performance",
+                    "Last 7 days",
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: AppConfig.adaptiveTextColor(
                         context,
@@ -58,19 +133,13 @@ class RevenueChart extends StatelessWidget {
                   color: AppColors.success.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Row(
-                  children: [
-                    Icon(Icons.trending_up, size: 16, color: AppColors.success),
-                    const SizedBox(width: 4),
-                    Text(
-                      "+12.5%",
-                      style: TextStyle(
-                        color: AppColors.success,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
+                child: Text(
+                  "₹${_totalRevenue.toStringAsFixed(0)}",
+                  style: const TextStyle(
+                    color: AppColors.success,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ),
             ],
@@ -107,7 +176,7 @@ class RevenueChart extends StatelessWidget {
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                 ),
-                labelFormat: '\${value}',
+                labelFormat: '₹{value}',
               ),
               tooltipBehavior: TooltipBehavior(
                 enable: true,
@@ -133,7 +202,7 @@ class RevenueChart extends StatelessWidget {
                           ),
                         ),
                         child: Text(
-                          '\$${point.y.toInt()}',
+                          '₹${point.y.toInt()}',
                           style: TextStyle(
                             color: AppConfig.adaptiveTextColor(context),
                             fontWeight: FontWeight.bold,
@@ -144,7 +213,7 @@ class RevenueChart extends StatelessWidget {
               ),
               series: <CartesianSeries>[
                 SplineAreaSeries<ChartData, String>(
-                  dataSource: chartData,
+                  dataSource: _chartData,
                   xValueMapper: (ChartData data, _) => data.x,
                   yValueMapper: (ChartData data, _) => data.y,
                   gradient: LinearGradient(

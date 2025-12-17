@@ -6,7 +6,8 @@ import 'customer_panel.dart';
 import 'owner_panel.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final VoidCallback? onLoginSuccess;
+  const LoginPage({super.key, this.onLoginSuccess});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -124,9 +125,13 @@ class _LoginPageState extends State<LoginPage> {
                               );
                             },
                             child: _isBusiness
-                                ? const OwnerPanel(key: ValueKey('owner'))
-                                : const CustomerPanel(
-                                    key: ValueKey('customer'),
+                                ? OwnerPanel(
+                                    key: const ValueKey('owner'),
+                                    onLoginSuccess: widget.onLoginSuccess,
+                                  )
+                                : CustomerPanel(
+                                    key: const ValueKey('customer'),
+                                    onLoginSuccess: widget.onLoginSuccess,
                                   ),
                           ),
                         ],

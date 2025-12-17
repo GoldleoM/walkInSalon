@@ -7,7 +7,8 @@ import 'package:walkinsalonapp/screens/business/business_details_page.dart';
 import 'package:walkinsalonapp/screens/business/business_dashboard_page.dart';
 
 class OwnerPanel extends StatefulWidget {
-  const OwnerPanel({super.key});
+  final VoidCallback? onLoginSuccess;
+  const OwnerPanel({super.key, this.onLoginSuccess});
 
   @override
   State<OwnerPanel> createState() => _OwnerPanelState();
@@ -48,6 +49,12 @@ class _OwnerPanelState extends State<OwnerPanel> {
 
       await Future.delayed(const Duration(milliseconds: 100));
       if (!mounted) return;
+
+      if (widget.onLoginSuccess != null) {
+        widget.onLoginSuccess!();
+        return;
+      }
+
       WidgetsBinding.instance.addPostFrameCallback((_) {
         Navigator.pushReplacement(
           context,
@@ -91,6 +98,11 @@ class _OwnerPanelState extends State<OwnerPanel> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+
+      if (widget.onLoginSuccess != null) {
+        widget.onLoginSuccess!();
+        return;
+      }
 
       if (userDoc['role'] == 'business_pending' ||
           !businessDoc.exists ||
@@ -158,6 +170,8 @@ class _OwnerPanelState extends State<OwnerPanel> {
           // ✉️ Email field
           TextFormField(
             controller: _emailController,
+            autofocus: true,
+            textInputAction: TextInputAction.next,
             keyboardType: TextInputType.emailAddress,
             style: Theme.of(
               context,
@@ -199,6 +213,9 @@ class _OwnerPanelState extends State<OwnerPanel> {
           TextFormField(
             controller: _passwordController,
             obscureText: true,
+            textInputAction: TextInputAction.done,
+            // Submit calls Login now
+            onFieldSubmitted: (_) => _loginOwner(),
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: colors.onSurface),
@@ -234,11 +251,11 @@ class _OwnerPanelState extends State<OwnerPanel> {
           ),
           const SizedBox(height: 24),
 
-          // 🧾 Submit button
+          // 🧾 Submit button (Login is now Primary)
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _isLoading ? null : _signUpOwner,
+              onPressed: _isLoading ? null : _loginOwner,
               style: ElevatedButton.styleFrom(
                 backgroundColor: colors.primary,
                 foregroundColor: Colors.white,
@@ -258,7 +275,7 @@ class _OwnerPanelState extends State<OwnerPanel> {
                       ),
                     )
                   : Text(
-                      "Sign Up as Business",
+                      "Login as Business",
                       style: Theme.of(
                         context,
                       ).textTheme.labelLarge?.copyWith(color: Colors.white),
@@ -267,11 +284,11 @@ class _OwnerPanelState extends State<OwnerPanel> {
           ),
           const SizedBox(height: 12),
 
-          // Existing partner link
+          // New partner link (Signup is now Secondary)
           TextButton(
-            onPressed: _isLoading ? null : _loginOwner,
+            onPressed: _isLoading ? null : _signUpOwner,
             child: Text(
-              "Existing partner? Log in",
+              "New partner? Create an account",
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: colors.onSurface.withValues(alpha: 0.7),
               ),

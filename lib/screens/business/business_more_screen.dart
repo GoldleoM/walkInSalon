@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -57,6 +58,88 @@ class BusinessMoreScreen extends StatelessWidget {
               context,
               MaterialPageRoute(builder: (_) => const BusinessSettingsPage()),
             ),
+          ),
+          const SizedBox(height: 16),
+          // 🛠️ Debug: Fix Ratings
+          _buildMenuCard(
+            context,
+            title: "Recalculate Rating",
+            icon: Icons.refresh_rounded,
+            color: Colors.teal,
+            onTap: () async {
+              final scaffold = ScaffoldMessenger.of(context);
+              scaffold.showSnackBar(
+                const SnackBar(content: Text('Recalculating...')),
+              );
+
+              try {
+                final uid = FirebaseAuth.instance.currentUser!.uid;
+
+                // 1. Recalculate Ratings
+                final reviewsSnapshot = await FirebaseFirestore.instance
+                    .collection('reviews')
+                    .where('businessId', isEqualTo: uid)
+                    .get();
+
+                final docs = reviewsSnapshot.docs;
+                final totalReviews = docs.length;
+                double sum = 0;
+                for (var doc in docs) {
+                  sum += (doc.data()['rating'] ?? 0).toDouble();
+                }
+                final avgRating = totalReviews > 0 ? sum / totalReviews : 0.0;
+
+                // 2. Recalculate Business Stats (Bookings & Revenue)
+                // Filter in-memory to match RevenueChart logic (safe against index lag/casing)
+                final appointmentsSnapshot = await FirebaseFirestore.instance
+                    .collection('appointments')
+                    .where('businessId', isEqualTo: uid)
+                    .get();
+
+                final allAppts = appointmentsSnapshot.docs;
+                int lifetimeBookings = 0;
+                double totalRevenue = 0;
+
+                for (var doc in allAppts) {
+                  final data = doc.data();
+                  // Lenient check: matches 'Completed' or 'completed'
+                  final status = (data['status'] ?? '')
+                      .toString()
+                      .toLowerCase();
+                  if (status == 'completed') {
+                    lifetimeBookings++;
+                    totalRevenue +=
+                        (data['totalPrice'] as num?)?.toDouble() ?? 0.0;
+                  }
+                }
+
+                await FirebaseFirestore.instance
+                    .collection('businesses')
+                    .doc(uid)
+                    .update({
+                      'avgRating': avgRating,
+                      'totalReviews': totalReviews,
+                      'lifetimeBookings': lifetimeBookings,
+                      'totalRevenue': totalRevenue,
+                    });
+
+                scaffold.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'Updated: ${avgRating.toStringAsFixed(1)}⭐, $lifetimeBookings bookings, \$${totalRevenue.toStringAsFixed(0)}',
+                    ),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              } catch (e) {
+                scaffold.showSnackBar(
+                  SnackBar(
+                    content: Text('Error: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
           ),
           const SizedBox(height: 32),
           _buildMenuCard(

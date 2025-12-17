@@ -12,6 +12,10 @@ class SalonModel {
   final List<Map<String, dynamic>> barbers;
   final double? latitude;
   final double? longitude;
+  final int lifetimeBookings;
+  final double totalRevenue;
+  final String openingTime;
+  final String closingTime;
 
   SalonModel({
     required this.uid,
@@ -26,6 +30,10 @@ class SalonModel {
     this.barbers = const [],
     this.latitude,
     this.longitude,
+    this.lifetimeBookings = 0,
+    this.totalRevenue = 0.0,
+    this.openingTime = "09:00",
+    this.closingTime = "20:00",
   });
 
   factory SalonModel.fromMap(Map<String, dynamic> map, String id) {
@@ -35,7 +43,8 @@ class SalonModel {
       address: map['address'] ?? 'No Address',
       city: map['city'],
       rating: (map['avgRating'] ?? 0).toDouble(),
-      imageUrl: map['coverImage'] ??
+      imageUrl:
+          map['coverImage'] ??
           map['bannerImage'] ??
           map['image'], // Cover image
       profileImageUrl: map['profileImage'], // Profile/Logo image
@@ -44,6 +53,10 @@ class SalonModel {
       barbers: List<Map<String, dynamic>>.from(map['barbers'] ?? []),
       latitude: (map['latitude'] as num?)?.toDouble(),
       longitude: (map['longitude'] as num?)?.toDouble(),
+      lifetimeBookings: (map['lifetimeBookings'] ?? 0).toInt(),
+      totalRevenue: (map['totalRevenue'] ?? 0).toDouble(),
+      openingTime: map['openingTime'] ?? "09:00",
+      closingTime: map['closingTime'] ?? "20:00",
     );
   }
 }

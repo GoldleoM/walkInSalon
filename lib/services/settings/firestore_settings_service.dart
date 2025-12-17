@@ -22,6 +22,8 @@ class FirestoreService {
     double? longitude,
     String? logoUrl,
     String? coverUrl,
+    String? openTime,
+    String? closeTime,
     List<Map<String, dynamic>>? services,
   }) async {
     await _firestore.collection('businesses').doc(userId).set({
@@ -32,6 +34,8 @@ class FirestoreService {
       'longitude': longitude,
       'profileImage': logoUrl,
       'coverImage': coverUrl,
+      'openTime': openTime,
+      'closeTime': closeTime,
       if (services != null) 'services': services,
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));

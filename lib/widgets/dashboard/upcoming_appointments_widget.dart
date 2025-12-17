@@ -17,6 +17,7 @@ class UpcomingAppointmentsWidget extends StatelessWidget {
       stream: FirebaseFirestore.instance
           .collection('appointments')
           .where('businessId', isEqualTo: uid)
+          .where('startAt', isGreaterThanOrEqualTo: Timestamp.now())
           .orderBy('startAt')
           .limit(10)
           .snapshots(),

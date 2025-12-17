@@ -6,6 +6,7 @@ import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:walkinsalonapp/models/booking_model.dart';
 import 'package:walkinsalonapp/models/salon_model.dart';
 import 'package:walkinsalonapp/screens/customer/booking/confirmation_screen.dart';
+import 'package:walkinsalonapp/services/time_slot_service.dart';
 
 class PaymentScreen extends StatefulWidget {
   final SalonModel salon;
@@ -82,7 +83,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        "\$${widget.service['price'] ?? '0'}",
+                        "₹${widget.service['price'] ?? '0'}",
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                           color: AppColors.primary,
@@ -157,38 +158,142 @@ class _PaymentScreenState extends State<PaymentScreen> {
         return;
       }
 
-      final docRef = FirebaseFirestore.instance.collection('appointments').doc();
+      // Fetch user profile to get name/phone if available
+      // Assuming a 'users' or 'customers' collection exists, or use Auth profile
+      String customerName = user.displayName ?? 'Guest Customer';
+      String customerPhone = user.phoneNumber ?? '';
 
+      // Optimistically try to fetch from Firestore if Auth data is sparse
+      try {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        if (userDoc.exists) {
+          final data = userDoc.data();
+          if (data != null) {
+            if (customerName == 'Guest Customer' && data['name'] != null) {
+              customerName = data['name'];
+            }
+            if (customerPhone.isEmpty && data['phoneNumber'] != null) {
+              customerPhone = data['phoneNumber'];
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore, fallback to defaults
+      }
+
+      final docRef = FirebaseFirestore.instance
+          .collection('appointments')
+          .doc();
+
+      // Parse time to create startAt
       // Parse time to create startAt
       DateTime? startAt;
       try {
-        final timeFormat = DateFormat("hh:mm a"); // e.g., 09:00 AM
-        final timeDate = timeFormat.parse(widget.time);
+        // ... (existing parsing logic) ...
+        // Re-parsing logic to be safe, same as TimeSlotService ideally
+        // We know widget.time is likely "hh:mm a" format from the previous screen
+        String cleanTime = widget.time
+            .replaceAll('\u202F', ' ')
+            .replaceAll('\u00A0', ' ')
+            .trim();
+        final dt = DateFormat("hh:mm a").parse(cleanTime);
         startAt = DateTime(
           widget.date.year,
           widget.date.month,
           widget.date.day,
-          timeDate.hour,
-          timeDate.minute,
+          dt.hour,
+          dt.minute,
         );
       } catch (e) {
-        debugPrint("Error parsing time: $e");
+        // Fallback attempt
+        try {
+          final parts = widget.time.split(":");
+          int h = int.parse(parts[0]);
+          int m = int.parse(parts[1].split(" ")[0]);
+          if (widget.time.contains("PM") && h < 12) h += 12;
+          if (widget.time.contains("AM") && h == 12) h = 0;
+          startAt = DateTime(
+            widget.date.year,
+            widget.date.month,
+            widget.date.day,
+            h,
+            m,
+          );
+        } catch (_) {}
+      }
+
+      if (startAt == null) throw "Invalid Date/Time";
+
+      // 🤖 Auto-Assign Barber if "Any" (null) selected
+      String finalBarberId = widget.barberName ?? '';
+      String finalBarberName = widget.barberName ?? 'Any Professional';
+      bool isAutoAssigned = false;
+
+      if (widget.barberName == null) {
+        // 1. Fetch bookings strictly for this day
+        final startOfDay = DateTime(
+          widget.date.year,
+          widget.date.month,
+          widget.date.day,
+        );
+        final endOfDay = startOfDay.add(const Duration(days: 1));
+
+        final snapshot = await FirebaseFirestore.instance
+            .collection('appointments')
+            .where('businessId', isEqualTo: widget.salon.uid)
+            .where('startAt', isGreaterThanOrEqualTo: startOfDay)
+            .where('startAt', isLessThan: endOfDay)
+            .get();
+
+        final bookings = snapshot.docs
+            .map((d) => BookingModel.fromMap(d.data(), d.id))
+            .toList();
+
+        // 2. Find available barber
+        final serviceDuration = widget.service['duration'] ?? 30;
+        final assigned = TimeSlotService.findFirstAvailableBarber(
+          slotStart: startAt,
+          durationMinutes: serviceDuration is int
+              ? serviceDuration
+              : int.tryParse(serviceDuration.toString()) ?? 30,
+          existingBookings: bookings,
+          salon: widget.salon,
+        );
+
+        if (assigned != null) {
+          finalBarberId = assigned['name']; // Using Name as ID
+          finalBarberName = assigned['name'];
+          isAutoAssigned = true;
+        } else {
+          finalBarberName = "Any Professional";
+        }
       }
 
       final booking = BookingModel(
         id: docRef.id,
         customerId: user.uid,
         businessId: widget.salon.uid,
-        barberId: widget.barberName ?? '',
+        salonName: widget.salon.salonName,
+        salonAddress: widget.salon.address,
+        barberId: finalBarberId,
+        barberName: finalBarberName,
         serviceId: widget.service['id'] ?? '',
         serviceName: widget.service['name'] ?? '',
         date: widget.date,
         time: widget.time,
-        startAt: startAt, // ✅ Correct field for business dashboard sorting
+        startAt: startAt,
         status: 'pending',
         totalPrice: (widget.service['price'] is int)
             ? (widget.service['price'] as int).toDouble()
             : (widget.service['price'] as double? ?? 0.0),
+        customerName: customerName,
+        customerPhoneNumber: customerPhone,
+        durationMinutes:
+            int.tryParse(widget.service['duration'].toString()) ?? 30,
+        isAutoAssigned: isAutoAssigned,
       );
 
       await docRef.set(booking.toMap());
@@ -197,9 +302,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
         Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const ConfirmationScreen()),
-          (route) => route.isFirst, // Go back to home or keep home in stack?
-          // ConfirmationScreen has a "Back to Home" button that does pushAndRemoveUntil.
-          // So here we can just push.
+          (route) => route.isFirst,
         );
       }
     } catch (e) {
