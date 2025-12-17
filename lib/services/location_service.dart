@@ -106,6 +106,65 @@ class LocationService {
     }
   }
 
+  /// Get city from coordinates
+  Future<String?> getCityFromCoordinates(
+      double latitude, double longitude) async {
+    // Try geocoding package first (works on mobile)
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        latitude,
+        longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        // Prioritize administrativeArea (state/city) over locality (area/neighborhood)
+        final city = place.administrativeArea ??
+            place.subAdministrativeArea ??
+            place.locality;
+
+        if (city != null && city.isNotEmpty) {
+          debugPrint('City from geocoding: $city');
+          return city;
+        }
+      }
+    } catch (e) {
+      debugPrint('Geocoding package failed (likely on web): $e');
+    }
+
+    // Fallback to Nominatim API (works on web and mobile)
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'https://nominatim.openstreetmap.org/reverse?lat=$latitude&lon=$longitude&format=json',
+        ),
+        headers: {'User-Agent': 'WalkInSalonApp/1.0'},
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is Map && data.containsKey('address')) {
+          final address = data['address'];
+          // Prioritize city/state level over suburbs/localities
+          final city = address['city'] ??
+              address['state_district'] ??
+              address['state'] ??
+              address['town'] ??
+              address['county'];
+
+          if (city != null && city.isNotEmpty) {
+            debugPrint('City from Nominatim: $city');
+            return city;
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Nominatim API failed: $e');
+    }
+
+    return null;
+  }
+
   /// Save selected city to local storage
   Future<void> saveSelectedCity(String city) async {
     try {

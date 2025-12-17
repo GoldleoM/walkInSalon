@@ -1,10 +1,13 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:walkinsalonapp/services/image_upload_service.dart';
+
 import 'package:walkinsalonapp/core/app_config.dart';
 
-class SalonImagesSection extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:walkinsalonapp/providers/image_upload_provider.dart';
+
+class SalonImagesSection extends ConsumerStatefulWidget {
   final String? logoUrl;
   final String? coverUrl;
   final Uint8List? logoBytes;
@@ -23,10 +26,10 @@ class SalonImagesSection extends StatefulWidget {
   });
 
   @override
-  State<SalonImagesSection> createState() => _SalonImagesSectionState();
+  ConsumerState<SalonImagesSection> createState() => _SalonImagesSectionState();
 }
 
-class _SalonImagesSectionState extends State<SalonImagesSection> {
+class _SalonImagesSectionState extends ConsumerState<SalonImagesSection> {
   Uint8List? _logoBytes;
   Uint8List? _coverBytes;
 
@@ -68,7 +71,7 @@ class _SalonImagesSectionState extends State<SalonImagesSection> {
 
     // Upload asynchronously — don’t block UI
     try {
-      await ImageUploadService.uploadImage(bytes, type);
+      await ref.read(imageUploadServiceProvider).uploadImage(bytes, type);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

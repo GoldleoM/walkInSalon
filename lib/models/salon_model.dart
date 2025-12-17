@@ -5,6 +5,7 @@ class SalonModel {
   final String? city;
   final double rating;
   final String? imageUrl;
+  final String? profileImageUrl;
   final bool isOpen;
   final List<Map<String, dynamic>>
   services; // Keeping as Map for flexibility for now
@@ -19,6 +20,7 @@ class SalonModel {
     this.city,
     this.rating = 0.0,
     this.imageUrl,
+    this.profileImageUrl,
     this.isOpen = true,
     this.services = const [],
     this.barbers = const [],
@@ -33,9 +35,10 @@ class SalonModel {
       address: map['address'] ?? 'No Address',
       city: map['city'],
       rating: (map['avgRating'] ?? 0).toDouble(),
-      imageUrl:
+      imageUrl: map['coverImage'] ??
           map['bannerImage'] ??
-          map['image'], // Handling potential different keys
+          map['image'], // Cover image
+      profileImageUrl: map['profileImage'], // Profile/Logo image
       isOpen: map['isOpen'] ?? true,
       services: List<Map<String, dynamic>>.from(map['services'] ?? []),
       barbers: List<Map<String, dynamic>>.from(map['barbers'] ?? []),

@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:walkinsalonapp/auth/login/auth_wrapper.dart';
 
-class LogoutButton extends StatelessWidget {
+import 'package:walkinsalonapp/auth/login/login_page.dart';
+import 'package:walkinsalonapp/providers/auth_provider.dart';
+
+class LogoutButton extends ConsumerWidget {
   const LogoutButton({super.key});
 
-  Future<void> _confirmLogout(BuildContext context) async {
+  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
     final shouldLogout = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -28,47 +29,20 @@ class LogoutButton extends StatelessWidget {
     );
 
     if (shouldLogout == true) {
-      try {
-        await FirebaseAuth.instance.signOut();
-
-        // Try Supabase signout but don't block if it fails
-        try {
-          await Supabase.instance.client.auth.signOut();
-        } catch (e) {
-          debugPrint("Supabase signout failed (ignoring): $e");
-        }
-
-        if (context.mounted) {
-          // Navigate to AuthWrapper (or Login) and clear stack
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const AuthWrapper()),
-            (route) => false,
-          );
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Logged out successfully."),
-              backgroundColor: AppColors.success,
-            ),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text("Logout failed: $e"),
-              backgroundColor: AppColors.error,
-            ),
-          );
-        }
+      await ref.read(authServiceProvider).signOut();
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const LoginPage()),
+          (route) => false,
+        );
       }
     }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ElevatedButton.icon(
-      onPressed: () => _confirmLogout(context),
+      onPressed: () => _confirmLogout(context, ref),
       icon: const Icon(Icons.logout),
       label: const Text("Logout"),
       style: ElevatedButton.styleFrom(

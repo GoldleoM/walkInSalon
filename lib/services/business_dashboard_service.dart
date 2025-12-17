@@ -5,7 +5,7 @@ class BusinessDashboardService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   /// 💾 Save or update business details
-  static Future<void> saveBusinessDetails(Map<String, dynamic> data) async {
+  Future<void> saveBusinessDetails(Map<String, dynamic> data) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception("No authenticated user");
 

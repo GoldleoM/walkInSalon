@@ -1,37 +1,41 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Riverpod
 import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:walkinsalonapp/screens/business/appointments_page.dart';
 import 'package:walkinsalonapp/screens/business/barber_management_page.dart';
 import 'package:walkinsalonapp/screens/business/business_more_screen.dart';
 import 'package:walkinsalonapp/widgets/dashboard/dashboard_body.dart';
 
-class BusinessDashboardPage extends StatefulWidget {
+// ✅ Tab State (Optional: Keep alive or auto-dispose)
+class DashboardTabNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+  
+  void setIndex(int index) => state = index;
+}
+
+final dashboardTabProvider = NotifierProvider<DashboardTabNotifier, int>(DashboardTabNotifier.new);
+
+class BusinessDashboardPage extends ConsumerWidget {
   const BusinessDashboardPage({super.key});
 
   @override
-  State<BusinessDashboardPage> createState() => _BusinessDashboardPageState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentIndex = ref.watch(dashboardTabProvider);
 
-class _BusinessDashboardPageState extends State<BusinessDashboardPage> {
-  int _currentIndex = 0;
+    final screens = const [
+      DashboardBody(),
+      AppointmentsPage(),
+      BarberManagementPage(),
+      BusinessMoreScreen(),
+    ];
 
-  final List<Widget> _screens = [
-    const DashboardBody(),
-    const AppointmentsPage(),
-    const BarberManagementPage(),
-    const BusinessMoreScreen(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: screens[currentIndex],
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
+        selectedIndex: currentIndex,
         onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          ref.read(dashboardTabProvider.notifier).setIndex(index);
         },
         backgroundColor: AppConfig.adaptiveSurface(context),
         indicatorColor: AppColors.primary.withValues(alpha: 0.1),

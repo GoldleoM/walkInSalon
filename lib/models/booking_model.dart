@@ -9,6 +9,7 @@ class BookingModel {
   final String serviceName;
   final DateTime date;
   final String time; // e.g. "10:00 AM"
+  final DateTime? startAt; // Combined Date + Time for efficient sorting
   final String status; // pending, confirmed, completed, cancelled
   final double totalPrice;
 
@@ -21,6 +22,7 @@ class BookingModel {
     required this.serviceName,
     required this.date,
     required this.time,
+    this.startAt,
     required this.status,
     required this.totalPrice,
   });
@@ -37,6 +39,7 @@ class BookingModel {
       time: map['time'] ?? '',
       status: map['status'] ?? 'pending',
       totalPrice: (map['totalPrice'] ?? 0).toDouble(),
+      startAt: map['startAt'] != null ? (map['startAt'] as Timestamp).toDate() : null,
     );
   }
 
@@ -52,6 +55,7 @@ class BookingModel {
       'status': status,
       'totalPrice': totalPrice,
       'createdAt': FieldValue.serverTimestamp(),
+      if (startAt != null) 'startAt': Timestamp.fromDate(startAt!),
     };
   }
 }

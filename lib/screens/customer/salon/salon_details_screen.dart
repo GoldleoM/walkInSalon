@@ -20,7 +20,9 @@ class SalonDetailsScreen extends StatelessWidget {
         slivers: [
           // 🖼️ Hero Image App Bar
           SliverAppBar(
-            expandedHeight: 250,
+            expandedHeight: MediaQuery.of(context).size.width < 600
+                ? MediaQuery.of(context).size.width * 9 / 16
+                : 400,
             pinned: true,
             backgroundColor: AppColors.primary,
             flexibleSpace: FlexibleSpaceBar(
@@ -56,39 +58,75 @@ class SalonDetailsScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Expanded(
-                        child: Text(
-                          salon.salonName,
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.warning.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.star,
-                              size: 18,
-                              color: AppColors.warning,
+                      // 🖼️ Profile Image (Left of Name)
+                      if (salon.profileImageUrl != null &&
+                          salon.profileImageUrl!.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(right: 16),
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: AppConfig.adaptiveSurface(context),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.grey.withValues(alpha: 0.2),
                             ),
-                            const SizedBox(width: 4),
+                          ),
+                          child: CircleAvatar(
+                            radius: 35, // Bigger size (70px)
+                            backgroundImage:
+                                NetworkImage(salon.profileImageUrl!),
+                            backgroundColor: Colors.grey.shade200,
+                          ),
+                        ),
+
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              salon.rating.toStringAsFixed(1),
-                              style: Theme.of(context).textTheme.titleMedium
+                              salon.salonName,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium
                                   ?.copyWith(
                                     fontWeight: FontWeight.bold,
+                                    fontSize: 24,
+                                  ),
+                            ),
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.warning.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.star,
+                                    size: 16,
                                     color: AppColors.warning,
                                   ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    salon.rating.toStringAsFixed(1),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.warning,
+                                          fontSize: 14,
+                                        ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),

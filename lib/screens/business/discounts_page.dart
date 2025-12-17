@@ -1,29 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:walkinsalonapp/providers/discounts_provider.dart';
 
-class DiscountsPage extends StatefulWidget {
+class DiscountsPage extends ConsumerStatefulWidget {
   const DiscountsPage({super.key});
 
   @override
-  State<DiscountsPage> createState() => _DiscountsPageState();
+  ConsumerState<DiscountsPage> createState() => _DiscountsPageState();
 }
 
-class _DiscountsPageState extends State<DiscountsPage> {
-  final List<Map<String, dynamic>> discounts = [
-    {
-      "title": "10% Off Haircuts",
-      "description": "Enjoy 10% off all haircut services this week!",
-      "percentage": 10,
-      "validUntil": DateTime(2025, 10, 25),
-    },
-    {
-      "title": "20% Off Beard Trims",
-      "description": "Exclusive offer for first-time customers.",
-      "percentage": 20,
-      "validUntil": DateTime(2025, 10, 15),
-    },
-  ];
-
+class _DiscountsPageState extends ConsumerState<DiscountsPage> {
   final DateFormat dateFormatter = DateFormat('dd MMM yyyy');
 
   void _addOrEditDiscount({Map<String, dynamic>? existingDiscount, int? index}) {
@@ -41,60 +28,64 @@ class _DiscountsPageState extends State<DiscountsPage> {
         title: Text(existingDiscount == null
             ? "Add New Discount"
             : "Edit Discount"),
-        content: SingleChildScrollView(
-          child: Column(
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(
-                  labelText: "Discount Title",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: descController,
-                maxLines: 2,
-                decoration: const InputDecoration(
-                  labelText: "Description",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: percentageController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: "Discount Percentage (%)",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
+        content: StatefulBuilder(
+          builder: (context, setState) {
+            return SingleChildScrollView(
+              child: Column(
                 children: [
-                  Expanded(
-                    child: Text(selectedDate == null
-                        ? "Valid Until: Not selected"
-                          : "Valid Until: ${dateFormatter.format(selectedDate!)}"),
+                  TextField(
+                    controller: titleController,
+                    decoration: const InputDecoration(
+                      labelText: "Discount Title",
+                      border: OutlineInputBorder(),
+                    ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.calendar_today),
-                    onPressed: () async {
-                      final pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: selectedDate ?? DateTime.now(),
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(2030),
-                      );
-                      if (pickedDate != null) {
-                        setState(() => selectedDate = pickedDate);
-                      }
-                    },
-                  )
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: descController,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      labelText: "Description",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: percentageController,
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      labelText: "Discount Percentage (%)",
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(selectedDate == null
+                            ? "Valid Until: Not selected"
+                            : "Valid Until: ${dateFormatter.format(selectedDate!)}"),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.calendar_today),
+                        onPressed: () async {
+                          final pickedDate = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDate ?? DateTime.now(),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime(2030),
+                          );
+                          if (pickedDate != null) {
+                            setState(() => selectedDate = pickedDate);
+                          }
+                        },
+                      )
+                    ],
+                  ),
                 ],
               ),
-            ],
-          ),
+            );
+          },
         ),
         actions: [
           TextButton(
@@ -117,13 +108,11 @@ class _DiscountsPageState extends State<DiscountsPage> {
                 "validUntil": selectedDate!,
               };
 
-              setState(() {
-                if (existingDiscount == null) {
-                  discounts.add(newDiscount);
-                } else {
-                  discounts[index!] = newDiscount;
-                }
-              });
+              if (existingDiscount == null) {
+                ref.read(discountsProvider.notifier).addDiscount(newDiscount);
+              } else {
+                ref.read(discountsProvider.notifier).updateDiscount(index!, newDiscount);
+              }
 
               Navigator.pop(context);
             },
@@ -147,9 +136,7 @@ class _DiscountsPageState extends State<DiscountsPage> {
           ),
           ElevatedButton(
             onPressed: () {
-              setState(() {
-                discounts.removeAt(index);
-              });
+              ref.read(discountsProvider.notifier).removeDiscount(index);
               Navigator.pop(context);
             },
             child: const Text("Delete"),
@@ -161,6 +148,8 @@ class _DiscountsPageState extends State<DiscountsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final discounts = ref.watch(discountsProvider);
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
@@ -199,7 +188,6 @@ class _DiscountsPageState extends State<DiscountsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Title Row
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -233,13 +221,11 @@ class _DiscountsPageState extends State<DiscountsPage> {
                             ],
                           ),
                           const SizedBox(height: 6),
-
                           Text(
                             discount["description"],
                             style: const TextStyle(fontSize: 14),
                           ),
                           const SizedBox(height: 6),
-
                           Text(
                             "Discount: ${discount["percentage"]}%",
                             style: const TextStyle(
@@ -249,14 +235,12 @@ class _DiscountsPageState extends State<DiscountsPage> {
                             ),
                           ),
                           const SizedBox(height: 6),
-
                           Text(
                             "Valid Until: ${dateFormatter.format(discount["validUntil"])}",
                             style: const TextStyle(
                                 fontSize: 13, color: Colors.grey),
                           ),
                           const SizedBox(height: 10),
-
                           Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [

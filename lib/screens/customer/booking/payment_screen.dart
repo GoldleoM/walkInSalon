@@ -157,24 +157,34 @@ class _PaymentScreenState extends State<PaymentScreen> {
         return;
       }
 
-      final docRef = FirebaseFirestore.instance.collection('bookings').doc();
+      final docRef = FirebaseFirestore.instance.collection('appointments').doc();
+
+      // Parse time to create startAt
+      DateTime? startAt;
+      try {
+        final timeFormat = DateFormat("hh:mm a"); // e.g., 09:00 AM
+        final timeDate = timeFormat.parse(widget.time);
+        startAt = DateTime(
+          widget.date.year,
+          widget.date.month,
+          widget.date.day,
+          timeDate.hour,
+          timeDate.minute,
+        );
+      } catch (e) {
+        debugPrint("Error parsing time: $e");
+      }
 
       final booking = BookingModel(
         id: docRef.id,
         customerId: user.uid,
         businessId: widget.salon.uid,
-        barberId:
-            widget.barberName ??
-            '', // Assuming barberName is unique or we need ID. Using name for now if ID not available in widget.
-        // Wait, widget.barberName is a String. BookingModel expects barberId.
-        // If we don't have barberId passed, we might need to adjust.
-        // For now, I'll use empty string or try to find where barberId comes from.
-        // The PaymentScreen receives barberName (String). It doesn't seem to receive barberId.
-        // This might be a gap. I'll use empty string for now and add a TODO.
-        serviceId: widget.service['id'] ?? '', // Assuming service map has id
+        barberId: widget.barberName ?? '',
+        serviceId: widget.service['id'] ?? '',
         serviceName: widget.service['name'] ?? '',
         date: widget.date,
         time: widget.time,
+        startAt: startAt, // ✅ Correct field for business dashboard sorting
         status: 'pending',
         totalPrice: (widget.service['price'] is int)
             ? (widget.service['price'] as int).toDouble()

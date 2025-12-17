@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:walkinsalonapp/services/location_service.dart';
-import 'package:walkinsalonapp/services/settings/location_settings_service.dart'
-    as settings;
 import 'package:walkinsalonapp/widgets/dialogs/settings/location_picker_dialog.dart';
 
 class LocationSelectionScreen extends StatefulWidget {
@@ -73,40 +71,26 @@ class _LocationSelectionScreenState extends State<LocationSelectionScreen> {
     if (picked != null) {
       // Reverse geocode to get city
       try {
-        final locationService = settings.LocationService();
-        final address = await locationService.reverseGeocode(
+        final city = await _locationService.getCityFromCoordinates(
           picked.latitude,
           picked.longitude,
         );
 
-        if (address != null) {
-          final city = _extractCityFromAddress(address);
-          if (city != null) {
-            _selectCity(city);
+        if (city != null) {
+          _selectCity(city);
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Could not determine city from selected location.'),
+              ),
+            );
           }
         }
       } catch (e) {
         debugPrint('Error getting city from coordinates: $e');
       }
     }
-  }
-
-  String? _extractCityFromAddress(String address) {
-    // Address format from Nominatim: "Street, Suburb, City, State, Country"
-    // We want to extract the city, not the suburb
-    final parts = address.split(',').map((e) => e.trim()).toList();
-
-    // For Nominatim addresses, city is usually in position 2 or 3
-    // Skip the first part (street/building) and second part (suburb/locality)
-    if (parts.length >= 3) {
-      // Return the third part which is typically the city
-      return parts[2];
-    } else if (parts.length == 2) {
-      // If only 2 parts, return the second (likely city or state)
-      return parts[1];
-    }
-
-    return null;
   }
 
   @override

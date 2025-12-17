@@ -11,7 +11,7 @@ class ImageUploadService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  static Future<String?> uploadImage(dynamic imageFile, String type) async {
+  Future<String?> uploadImage(dynamic imageFile, String type) async {
     final user = _auth.currentUser;
     if (user == null) throw Exception('User not logged in');
 

@@ -4,7 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:walkinsalonapp/screens/business/reviews_page.dart';
 import 'package:walkinsalonapp/screens/business/settings_page.dart';
-import '../../business_logic/discounts.dart';
+import 'package:walkinsalonapp/screens/business/discounts_page.dart';
+import 'package:walkinsalonapp/auth/login/login_page.dart';
 
 class BusinessMoreScreen extends StatelessWidget {
   const BusinessMoreScreen({super.key});
@@ -64,7 +65,33 @@ class BusinessMoreScreen extends StatelessWidget {
             icon: Icons.logout_rounded,
             color: AppColors.error,
             onTap: () async {
-              await FirebaseAuth.instance.signOut();
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Logout'),
+                  content: const Text('Are you sure you want to logout?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Logout'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirm == true) {
+                await FirebaseAuth.instance.signOut();
+                if (context.mounted) {
+                  Navigator.of(context).pushAndRemoveUntil(
+                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                    (route) => false,
+                  );
+                }
+              }
             },
             isDestructive: true,
           ),

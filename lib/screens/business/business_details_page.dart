@@ -4,32 +4,36 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart'; // Riverpod
 import 'package:file_picker/file_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:walkinsalonapp/auth/login/login_page.dart';
+import 'package:walkinsalonapp/providers/business_provider.dart'; // Provider
+import 'package:walkinsalonapp/providers/image_upload_provider.dart'; // Provider
 import 'package:walkinsalonapp/screens/business/business_dashboard_page.dart';
 import 'package:walkinsalonapp/widgets/dialogs/barbers/add_barber_dialog.dart';
 import 'package:walkinsalonapp/widgets/dialogs/barbers/add_specialty_dialog.dart';
 import 'package:walkinsalonapp/screens/business/widgets/cover_image_picker.dart';
 import 'package:walkinsalonapp/screens/business/widgets/profile_image_picker.dart';
 import 'package:walkinsalonapp/widgets/dashboard/barber_dashboard_card.dart';
-import 'package:walkinsalonapp/services/image_upload_service.dart';
 import 'package:walkinsalonapp/widgets/dialogs/settings/location_picker_dialog.dart';
+import 'package:walkinsalonapp/widgets/dialogs/services/add_service_dialog.dart';
+import 'package:walkinsalonapp/widgets/dashboard/service_list_item.dart';
 
 final supabase = Supabase.instance.client;
 final _uuid = const Uuid();
 
-class BusinessDetailsPage extends StatefulWidget {
+class BusinessDetailsPage extends ConsumerStatefulWidget {
   const BusinessDetailsPage({super.key});
 
   @override
-  State<BusinessDetailsPage> createState() => _BusinessDetailsPageState();
+  ConsumerState<BusinessDetailsPage> createState() => _BusinessDetailsPageState();
 }
 
-class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
+class _BusinessDetailsPageState extends ConsumerState<BusinessDetailsPage> {
   final _formKey = GlobalKey<FormState>();
   final _salonNameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -47,6 +51,7 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
   double? _longitude;
 
   final List<Map<String, dynamic>> _barbers = [];
+  final List<Map<String, dynamic>> _services = [];
 
   // 🕓 Pick a time with popup
   Future<void> _pickTime(TextEditingController controller) async {
@@ -124,7 +129,8 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
   }
 
   Future<String?> _uploadImage(dynamic file, String type) async {
-    return await ImageUploadService.uploadImage(file, type);
+    // 🛠️ USE RIVERPOD PROVIDER
+    return await ref.read(imageUploadServiceProvider).uploadImage(file, type);
   }
 
   Future<void> _saveBusinessDetails() async {
@@ -158,7 +164,6 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
       }
 
       final businessData = {
-        'businessId': uid,
         'salonName': _salonNameController.text.trim(),
         'phone': _phoneController.text.trim(),
         'address': _addressController.text.trim(),
@@ -167,26 +172,15 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
         'openTime': _openTimeController.text.trim(),
         'closeTime': _closeTimeController.text.trim(),
         'barbers': _barbers,
+        'services': _services,
         'profileImage': profileUrl,
         'coverImage': coverUrl,
         'avgRating': 0.0,
         'status': 'active',
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
       };
 
-      final firestore = FirebaseFirestore.instance;
-
-      await firestore
-          .collection('businesses')
-          .doc(uid)
-          .set(businessData, SetOptions(merge: true));
-      await firestore.collection('users').doc(uid).update({
-        'role': 'business',
-        'businessId': uid,
-        'businessSetupComplete': true,
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      // 🛠️ USE RIVERPOD PROVIDER
+      await ref.read(businessServiceProvider).saveBusinessDetails(businessData);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -222,6 +216,30 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
     if (specialty != null) {
       setState(() => _barbers[index]['specialties'].add(specialty));
     }
+  }
+
+  void _addService() async {
+    final newService = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => const AddServiceDialog(),
+    );
+    if (newService != null) {
+      setState(() => _services.add(newService));
+    }
+  }
+
+  void _editService(int index) async {
+    final updatedService = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => AddServiceDialog(initialService: _services[index]),
+    );
+    if (updatedService != null) {
+      setState(() => _services[index] = updatedService);
+    }
+  }
+
+  void _deleteService(int index) {
+    setState(() => _services.removeAt(index));
   }
 
   @override
@@ -357,6 +375,41 @@ class _BusinessDetailsPageState extends State<BusinessDetailsPage> {
                           ),
                         ),
                       ],
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Services",
+                          style: GoogleFonts.poppins(
+                            color: colors.onSurface,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: _addService,
+                          icon: Icon(
+                            Icons.add_circle,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Column(
+                      children: _services.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final service = entry.value;
+                        return ServiceListItem(
+                          service: service,
+                          onEdit: () => _editService(index),
+                          onDelete: () => _deleteService(index),
+                        );
+                      }).toList(),
                     ),
 
                     const SizedBox(height: 28),

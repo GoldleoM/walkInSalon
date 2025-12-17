@@ -151,19 +151,21 @@ class _CustomerHomeContentState extends State<CustomerHomeContent> {
   }
 
   List<SalonModel> get _filteredSalons {
-    const double radiusMeters = 30000; // 30 km
-    return _allSalons.where((salon) {
+    const double radiusMeters = 20000; // 20 km
+    final filtered = _allSalons.where((salon) {
       final matchesSearch =
           salon.salonName.toLowerCase().contains(_searchQuery) ||
           salon.address.toLowerCase().contains(_searchQuery);
-      // City filter (keep for backward compatibility)
+      
+      // City filter
       final matchesCity =
           _currentCity == 'Select Location' ||
           (salon.city != null &&
               salon.city!.toLowerCase().contains(_currentCity.toLowerCase())) ||
           salon.address.toLowerCase().contains(_currentCity.toLowerCase());
+
       // Radius filter
-      bool withinRadius = true;
+      bool withinRadius = false;
       if (_currentPosition != null &&
           salon.latitude != null &&
           salon.longitude != null) {
@@ -175,16 +177,47 @@ class _CustomerHomeContentState extends State<CustomerHomeContent> {
         );
         withinRadius = distance <= radiusMeters;
       }
+
+      // Show if searching OR (Category Match AND (City Match OR Within Radius))
+      // Allowing distance to override mismatching city names (e.g. Jaipur vs Jaipur Rural)
+      
       if (_selectedCategory == 'All') {
-        return matchesSearch && matchesCity && withinRadius;
+        return matchesSearch && (matchesCity || withinRadius);
       }
+      
       final matchesCategory = salon.services.any(
         (s) => s['name'].toString().toLowerCase().contains(
           _selectedCategory.toLowerCase(),
         ),
       );
-      return matchesSearch && matchesCategory && matchesCity && withinRadius;
+      
+      return matchesSearch && matchesCategory && (matchesCity || withinRadius);
     }).toList();
+
+    // Sort by distance
+    if (_currentPosition != null) {
+      filtered.sort((a, b) {
+        final distA = (a.latitude != null && a.longitude != null)
+            ? Geolocator.distanceBetween(
+                _currentPosition!.latitude,
+                _currentPosition!.longitude,
+                a.latitude!,
+                a.longitude!,
+              )
+            : double.infinity;
+        final distB = (b.latitude != null && b.longitude != null)
+            ? Geolocator.distanceBetween(
+                _currentPosition!.latitude,
+                _currentPosition!.longitude,
+                b.latitude!,
+                b.longitude!,
+              )
+            : double.infinity;
+        return distA.compareTo(distB);
+      });
+    }
+
+    return filtered;
   }
 
   @override
@@ -303,20 +336,54 @@ class _CustomerHomeContentState extends State<CustomerHomeContent> {
                         ],
                       ),
                     )
-                  : ListView.builder(
-                      itemCount: _filteredSalons.length,
-                      itemBuilder: (c, i) {
-                        final salon = _filteredSalons[i];
-                        return SalonCard(
-                          salon: salon,
-                          distance: _calculateDistance(salon),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => SalonDetailsScreen(salon: salon),
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        if (constraints.maxWidth > 600) {
+                          // Tablet/Desktop: Grid Layout
+                          return GridView.builder(
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 1.2, // Adjust card height
+                              crossAxisSpacing: 20,
+                              mainAxisSpacing: 20,
                             ),
-                          ),
-                        );
+                            itemCount: _filteredSalons.length,
+                            itemBuilder: (c, i) {
+                              final salon = _filteredSalons[i];
+                              return SalonCard(
+                                salon: salon,
+                                distance: _calculateDistance(salon),
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        SalonDetailsScreen(salon: salon),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        } else {
+                          // Mobile: List Layout
+                          return ListView.builder(
+                            itemCount: _filteredSalons.length,
+                            itemBuilder: (c, i) {
+                              final salon = _filteredSalons[i];
+                              return SalonCard(
+                                salon: salon,
+                                distance: _calculateDistance(salon),
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        SalonDetailsScreen(salon: salon),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }
                       },
                     ),
             ),

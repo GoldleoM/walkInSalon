@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
-import 'package:walkinsalonapp/services/customer_auth_service.dart';
+import 'package:walkinsalonapp/providers/auth_provider.dart';
 import 'package:walkinsalonapp/utils/validators.dart';
 import 'package:walkinsalonapp/auth/signup/customer_signup_screen.dart';
 import 'package:walkinsalonapp/auth/password/forgot_password_screen.dart';
+import 'package:walkinsalonapp/auth/login/auth_wrapper.dart';
 
-class CustomerPanel extends StatefulWidget {
+class CustomerPanel extends ConsumerStatefulWidget {
   const CustomerPanel({super.key});
 
   @override
-  State<CustomerPanel> createState() => _CustomerPanelState();
+  ConsumerState<CustomerPanel> createState() => _CustomerPanelState();
 }
 
-class _CustomerPanelState extends State<CustomerPanel> {
+class _CustomerPanelState extends ConsumerState<CustomerPanel> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _authService = CustomerAuthService();
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -33,7 +34,8 @@ class _CustomerPanelState extends State<CustomerPanel> {
 
     setState(() => _isLoading = true);
 
-    final result = await _authService.loginCustomer(
+    final authService = ref.read(authServiceProvider);
+    final result = await authService.loginCustomer(
       email: _emailController.text,
       password: _passwordController.text,
     );
@@ -42,13 +44,23 @@ class _CustomerPanelState extends State<CustomerPanel> {
     setState(() => _isLoading = false);
 
     if (result['success']) {
-      // Navigation is handled by AuthWrapper
+      // 🔄 Force refresh role & navigate to AuthWrapper to re-route
+      ref.invalidate(currentUserRoleProvider);
+      
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(result['message']),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
         ),
+      );
+
+      // Reset to AuthWrapper to handle routing based on new state
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const AuthWrapper()),
+        (route) => false,
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

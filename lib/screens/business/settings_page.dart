@@ -12,17 +12,22 @@ import 'package:walkinsalonapp/widgets/settings/logout_button.dart';
 
 // Services
 import 'package:walkinsalonapp/services/settings/firestore_settings_service.dart';
+import 'package:walkinsalonapp/widgets/dialogs/services/add_service_dialog.dart';
+import 'package:walkinsalonapp/widgets/dashboard/service_list_item.dart';
+import 'package:google_fonts/google_fonts.dart'; // Ensure font consistency
 
-import 'package:walkinsalonapp/services/image_upload_service.dart';
 
-class BusinessSettingsPage extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:walkinsalonapp/providers/image_upload_provider.dart';
+
+class BusinessSettingsPage extends ConsumerStatefulWidget {
   const BusinessSettingsPage({super.key});
 
   @override
-  State<BusinessSettingsPage> createState() => _BusinessSettingsPageState();
+  ConsumerState<BusinessSettingsPage> createState() => _BusinessSettingsPageState();
 }
 
-class _BusinessSettingsPageState extends State<BusinessSettingsPage> {
+class _BusinessSettingsPageState extends ConsumerState<BusinessSettingsPage> {
   final _firestore = FirestoreService();
 
   bool _isSaving = false;
@@ -39,6 +44,8 @@ class _BusinessSettingsPageState extends State<BusinessSettingsPage> {
 
   Uint8List? logoBytes;
   Uint8List? coverBytes;
+
+  final List<Map<String, dynamic>> _services = [];
 
   @override
   void initState() {
@@ -73,6 +80,11 @@ class _BusinessSettingsPageState extends State<BusinessSettingsPage> {
         if (lat != null && lng != null) {
           selectedLocation = LatLng(lat, lng);
         }
+
+        _services.clear();
+        if (business['services'] != null) {
+          _services.addAll(List<Map<String, dynamic>>.from(business['services']));
+        }
       });
     } catch (e) {
       if (mounted) {
@@ -83,6 +95,30 @@ class _BusinessSettingsPageState extends State<BusinessSettingsPage> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _addService() async {
+    final newService = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => const AddServiceDialog(),
+    );
+    if (newService != null) {
+      setState(() => _services.add(newService));
+    }
+  }
+
+  void _editService(int index) async {
+    final updatedService = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (context) => AddServiceDialog(initialService: _services[index]),
+    );
+    if (updatedService != null) {
+      setState(() => _services[index] = updatedService);
+    }
+  }
+
+  void _deleteService(int index) {
+    setState(() => _services.removeAt(index));
   }
 
   Future<void> _saveChanges() async {
@@ -97,14 +133,14 @@ class _BusinessSettingsPageState extends State<BusinessSettingsPage> {
       String? uploadedCover;
 
       if (logoBytes != null) {
-        uploadedLogo = await ImageUploadService.uploadImage(
+        uploadedLogo = await ref.read(imageUploadServiceProvider).uploadImage(
           logoBytes,
           'profile',
         );
       }
 
       if (coverBytes != null) {
-        uploadedCover = await ImageUploadService.uploadImage(
+        uploadedCover = await ref.read(imageUploadServiceProvider).uploadImage(
           coverBytes,
           'cover',
         );
@@ -120,6 +156,7 @@ class _BusinessSettingsPageState extends State<BusinessSettingsPage> {
         longitude: selectedLocation?.longitude,
         logoUrl: uploadedLogo ?? logoUrl,
         coverUrl: uploadedCover ?? coverUrl,
+        services: _services,
       );
 
       // ✅ Only update email field in Firestore (not Firebase Auth)
@@ -219,6 +256,59 @@ class _BusinessSettingsPageState extends State<BusinessSettingsPage> {
                   },
                 ),
                 const SizedBox(height: 20),
+
+                // ✂️ Services Management
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Services",
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: theme.textTheme.titleMedium?.color,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _addService,
+                      icon: const Icon(Icons.add_circle, color: AppColors.primary),
+                      tooltip: "Add Service",
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                if (_services.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppConfig.adaptiveSurface(context).withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: theme.dividerColor.withValues(alpha: 0.1),
+                      ),
+                    ),
+                    child: Text(
+                      "No services added yet.\nTap + to add your first service.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppConfig.adaptiveTextColor(context).withValues(alpha: 0.5),
+                      ),
+                    ),
+                  )
+                else
+                  Column(
+                    children: _services.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final service = entry.value;
+                      return ServiceListItem(
+                        service: service,
+                        onEdit: () => _editService(index),
+                        onDelete: () => _deleteService(index),
+                      );
+                    }).toList(),
+                  ),
+                const SizedBox(height: 30),
 
                 // 💾 Save Button
                 ElevatedButton.icon(

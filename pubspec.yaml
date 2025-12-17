@@ -48,6 +48,7 @@ dependencies:
   syncfusion_flutter_charts: ^31.2.12
   shared_preferences: ^2.5.3
   path: ^1.9.1
+  flutter_riverpod: ^3.0.3
 
 dev_dependencies:
   flutter_test:

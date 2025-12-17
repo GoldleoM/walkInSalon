@@ -10,6 +10,8 @@ import 'core/app_config.dart';
 import 'config/firebase_options.dart';
 import 'config/supabase_config.dart';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -23,7 +25,11 @@ Future<void> main() async {
   // Optional warm-up delay (for splash smoothness)
   await Future.delayed(const Duration(milliseconds: 200));
 
-  runApp(const WalkInSalonApp());
+  runApp(
+    const ProviderScope(
+      child: WalkInSalonApp(),
+    ),
+  );
 }
 
 class WalkInSalonApp extends StatelessWidget {

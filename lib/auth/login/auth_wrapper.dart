@@ -1,86 +1,60 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
-import 'package:walkinsalonapp/screens/business/business_details_page.dart';
+import 'package:walkinsalonapp/providers/auth_provider.dart';
 import 'package:walkinsalonapp/screens/business/business_dashboard_page.dart';
+import 'package:walkinsalonapp/screens/business/business_details_page.dart';
 import 'package:walkinsalonapp/screens/customer/home/customer_home_screen.dart';
 import 'package:walkinsalonapp/screens/intro/intro_page.dart';
 import 'login_page.dart';
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends ConsumerWidget {
   const AuthWrapper({super.key});
 
-  Future<Widget> _getRoleBasedPage(User user) async {
-    try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-
-      if (!snapshot.exists) return const LoginPage();
-
-      final role = snapshot.data()?['role'];
-
-      if (role == 'business_pending') {
-        return const BusinessDetailsPage();
-      } else if (role == 'business') {
-        return const BusinessDashboardPage();
-      } else if (role == 'customer') {
-        return const CustomerHomeScreen();
-      } else {
-        return const LoginPage();
-      }
-    } catch (e) {
-      debugPrint('AuthWrapper error: $e');
-      return const LoginPage();
-    }
-  }
-
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = Theme.of(context).colorScheme;
 
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        // 🔄 While checking auth state
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingScreen(context, 'Checking login...');
-        }
+    // 1️⃣ Watch Auth State (Firebase User)
+    final authState = ref.watch(authStateProvider);
 
-        // 🚫 Not logged in
-        if (!snapshot.hasData || snapshot.data == null) {
-          // Changed from LoginPage() to IntroPage()
+    return authState.when(
+      data: (user) {
+        // 🚫 Not logged in -> Show Intro
+        if (user == null) {
           return const IntroPage();
         }
 
-        // ✅ Logged in — determine role
-        return FutureBuilder<Widget>(
-          future: _getRoleBasedPage(snapshot.data!),
-          builder: (context, roleSnapshot) {
-            if (roleSnapshot.connectionState == ConnectionState.waiting) {
-              return _buildLoadingScreen(context, 'Loading your dashboard...');
-            } else if (roleSnapshot.hasError) {
-              return Scaffold(
-                backgroundColor: colors.surface,
-                body: Center(
-                  child: Text(
-                    'Something went wrong!',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ),
-              );
+        // ✅ Logged in -> Check Role
+        return ref.watch(currentUserRoleProvider).when(
+          data: (role) {
+            if (role == 'business_pending') {
+              return const BusinessDetailsPage();
+            } else if (role == 'business') {
+              return const BusinessDashboardPage();
+            } else if (role == 'customer') {
+              return const CustomerHomeScreen();
             } else {
-              return roleSnapshot.data!;
+              // Role missing or unknown -> Login
+              return const LoginPage();
             }
           },
+          loading: () => _buildLoadingScreen(context, 'Loading dashboard...'),
+          error: (err, stack) => Scaffold(
+            backgroundColor: colors.surface,
+            body: Center(child: Text('Error: $err')),
+          ),
         );
       },
+      loading: () => _buildLoadingScreen(context, 'Checking login...'),
+      error: (err, stack) => Scaffold(
+        backgroundColor: colors.surface,
+        body: Center(child: Text('Auth Error: $err')),
+      ),
     );
   }
 
-  /// 🌀 Centralized loading screen — matches your theme
+  /// 🌀 Centralized loading screen
   Widget _buildLoadingScreen(BuildContext context, String message) {
     final colors = Theme.of(context).colorScheme;
 
@@ -90,16 +64,16 @@ class AuthWrapper extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 🎞️ Replace this with your loading GIF or logo animation later
-            Image.asset(AppImages.logo, width: 100, height: 100),
+             Image.asset(AppImages.logo, width: 100, height: 100),
             const SizedBox(height: 24),
             CircularProgressIndicator(color: colors.primary),
             const SizedBox(height: 16),
             Text(
               message,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: colors.onSurface),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: colors.onSurface),
             ),
           ],
         ),
