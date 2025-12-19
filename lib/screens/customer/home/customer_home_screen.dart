@@ -11,6 +11,7 @@ import 'package:walkinsalonapp/screens/customer/home/widgets/salon_card.dart';
 import 'package:walkinsalonapp/screens/customer/salon/salon_details_screen.dart';
 import 'package:walkinsalonapp/screens/customer/bookings/my_bookings_screen.dart';
 import 'package:walkinsalonapp/screens/customer/profile/customer_profile_screen.dart';
+import 'package:walkinsalonapp/screens/customer/explore/explore_screen.dart';
 import 'package:walkinsalonapp/services/location_service.dart';
 
 class CustomerHomeScreen extends StatefulWidget {
@@ -24,6 +25,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   int _currentIndex = 0;
   final List<Widget> _screens = const [
     CustomerHomeContent(),
+    ExploreScreen(),
     MyBookingsScreen(),
     CustomerProfileScreen(),
   ];
@@ -44,6 +46,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.explore_outlined),
+            selectedIcon: Icon(Icons.explore),
+            label: 'Explore',
           ),
           NavigationDestination(
             icon: Icon(Icons.calendar_today_outlined),

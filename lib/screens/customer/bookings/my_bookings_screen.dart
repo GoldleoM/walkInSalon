@@ -162,6 +162,65 @@ class MyBookingsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (isPending || booking.status == 'confirmed')
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: InkWell(
+                            onTap: () async {
+                              final diff =
+                                  booking.startAt?.difference(DateTime.now()) ??
+                                  Duration.zero;
+                              if (diff.inMinutes < 60) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Cannot cancel within 1 hour of appointment',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+
+                              final confirm = await showDialog<bool>(
+                                context: context,
+                                builder: (c) => AlertDialog(
+                                  title: const Text('Cancel Booking?'),
+                                  content: const Text(
+                                    'Are you sure you want to cancel?',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(c, false),
+                                      child: const Text('No'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(c, true),
+                                      child: const Text('Yes'),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (confirm == true) {
+                                await FirebaseFirestore.instance
+                                    .collection('appointments')
+                                    .doc(booking.id)
+                                    .update({'status': 'cancelled'});
+                              }
+                            },
+                            child: Text(
+                              "Cancel Booking",
+                              style: TextStyle(
+                                color: AppColors.error,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     const SizedBox(height: 8),
                     Text(
                       "${booking.serviceName} • ₹${booking.totalPrice}",

@@ -6,6 +6,8 @@ import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:walkinsalonapp/screens/business/reviews_page.dart';
 import 'package:walkinsalonapp/screens/business/settings_page.dart';
 import 'package:walkinsalonapp/screens/business/discounts_page.dart';
+import 'package:walkinsalonapp/screens/business/analytics_page.dart';
+import 'package:walkinsalonapp/screens/business/create_post_screen.dart';
 import 'package:walkinsalonapp/auth/login/login_page.dart';
 
 class BusinessMoreScreen extends StatelessWidget {
@@ -46,6 +48,28 @@ class BusinessMoreScreen extends StatelessWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const DiscountsPage()),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildMenuCard(
+            context,
+            title: "Business Insights",
+            icon: Icons.bar_chart_rounded,
+            color: Colors.purple,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AnalyticsScreen()),
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildMenuCard(
+            context,
+            title: "Create Post",
+            icon: Icons.add_photo_alternate_rounded,
+            color: Colors.pink,
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CreatePostScreen()),
             ),
           ),
           const SizedBox(height: 16),
