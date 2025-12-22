@@ -1,13 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:walkinsalonapp/core/app_config.dart';
-import 'package:walkinsalonapp/models/post_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:walkinsalonapp/models/salon_model.dart';
+import 'package:walkinsalonapp/providers/explore_provider.dart';
 import 'package:walkinsalonapp/screens/customer/explore/widgets/post_card.dart';
 import 'package:walkinsalonapp/screens/customer/salon/salon_details_screen.dart';
-import 'package:walkinsalonapp/services/post_service.dart';
 
-class ExploreScreen extends StatelessWidget {
+class ExploreScreen extends ConsumerWidget {
   const ExploreScreen({super.key});
 
   Future<void> _navigateToSalon(BuildContext context, String salonId) async {
@@ -44,7 +43,9 @@ class ExploreScreen extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final postsAsync = ref.watch(explorePostsProvider);
+
     return Scaffold(
       backgroundColor: Colors.black, // Dark background for media feed
       extendBodyBehindAppBar: true,
@@ -56,22 +57,10 @@ class ExploreScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
-        // Force hamburger/back visible on dark background if needed,
-        // usually default is okay but styling helps
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: StreamBuilder<List<PostModel>>(
-        stream: PostService().getPosts(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          }
-
-          final posts = snapshot.data ?? [];
-
+      body: postsAsync.when(
+        data: (posts) {
           if (posts.isEmpty) {
             return Center(
               child: Column(
@@ -94,8 +83,9 @@ class ExploreScreen extends StatelessWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-              // Stream updates automatically, but we can delay slightly to show interaction
-              await Future.delayed(const Duration(seconds: 1));
+              // Invalidate to refresh (re-listen) if needed, basically a no-op for stream
+              // but good for UX feel or forcing a reconnect if stream died
+              return ref.refresh(explorePostsProvider.future);
             },
             child: PageView.builder(
               scrollDirection: Axis.vertical,
@@ -110,6 +100,8 @@ class ExploreScreen extends StatelessWidget {
             ),
           );
         },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('Error: $err')),
       ),
     );
   }

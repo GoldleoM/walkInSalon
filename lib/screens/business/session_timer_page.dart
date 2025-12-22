@@ -62,10 +62,11 @@ class _SessionTimerPageState extends State<SessionTimerPage> {
       await _appointmentService.startAppointment(widget.docId);
       _startTimer();
     } catch (e) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text("Error starting session: $e")));
+      }
     }
   }
 

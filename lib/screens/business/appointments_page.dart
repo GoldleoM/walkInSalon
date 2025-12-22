@@ -33,17 +33,19 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       try {
         if (action == 'accept') {
           await _appointmentService.acceptAppointment(docId);
-          if (mounted)
+          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Appointment Accepted!")),
             );
+          }
         } else if (action == 'decline') {
           // In a real app, maybe show a confirmation dialog first
           await _appointmentService.declineAppointment(docId);
-          if (mounted)
+          if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("Appointment Declined.")),
             );
+          }
         } else if (action == 'open_session') {
           // Navigate to Stopwatch Page
           final doc = data['doc'] as DocumentSnapshot;
@@ -63,16 +65,18 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           await _appointmentService.completeAppointment(docId);
         } else if (action == 'no_show') {
           await _appointmentService.markAsNoShow(docId);
-          if (mounted)
+          if (mounted) {
             ScaffoldMessenger.of(
               context,
             ).showSnackBar(const SnackBar(content: Text("Marked as No Show.")));
+          }
         }
       } catch (e) {
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
           );
+        }
       }
       return;
     }

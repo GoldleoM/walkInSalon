@@ -1,18 +1,18 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:walkinsalonapp/core/app_config.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:walkinsalonapp/models/post_model.dart';
-import 'package:walkinsalonapp/services/post_service.dart';
+import 'package:walkinsalonapp/providers/explore_provider.dart';
 import 'package:walkinsalonapp/widgets/dialogs/comments_sheet.dart';
 
-class PostCard extends StatelessWidget {
+class PostCard extends ConsumerWidget {
   final PostModel post;
   final VoidCallback onSalonTap;
 
   const PostCard({super.key, required this.post, required this.onSalonTap});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final user = FirebaseAuth.instance.currentUser;
     final isLiked = user != null && post.likes.contains(user.uid);
     // Background should be black for immersive media
@@ -24,7 +24,8 @@ class PostCard extends StatelessWidget {
           // 1. Full Screen Image
           Positioned.fill(
             child: GestureDetector(
-              onDoubleTap: () => PostService().likePost(post.id),
+              onDoubleTap: () =>
+                  ref.read(postServiceProvider).likePost(post.id),
               child: Image.network(
                 post.imageUrl,
                 fit: BoxFit.cover,
@@ -82,7 +83,7 @@ class PostCard extends StatelessWidget {
                   icon: isLiked ? Icons.favorite : Icons.favorite_border,
                   color: isLiked ? Colors.red : Colors.white,
                   label: '${post.likes.length}',
-                  onTap: () => PostService().likePost(post.id),
+                  onTap: () => ref.read(postServiceProvider).likePost(post.id),
                 ),
                 const SizedBox(height: 20),
                 _buildActionButton(
@@ -110,7 +111,7 @@ class PostCard extends StatelessWidget {
                   icon: Icons.share_outlined,
                   color: Colors.white,
                   label: 'Share',
-                  onTap: () => PostService().sharePost(post),
+                  onTap: () => ref.read(postServiceProvider).sharePost(post),
                 ),
               ],
             ),

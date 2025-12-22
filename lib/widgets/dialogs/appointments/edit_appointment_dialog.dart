@@ -99,7 +99,7 @@ class _EditAppointmentDialogState extends State<EditAppointmentDialog> {
 
             // 🏷️ STATUS
             DropdownButtonFormField<String>(
-              value:
+              initialValue:
                   [
                     "pending",
                     "confirmed",
@@ -147,7 +147,7 @@ class _EditAppointmentDialogState extends State<EditAppointmentDialog> {
               const Center(child: LinearProgressIndicator())
             else if (barbers.isNotEmpty)
               DropdownButtonFormField<String>(
-                value: barbers.any((b) => b['name'] == selectedBarberId)
+                initialValue: barbers.any((b) => b['name'] == selectedBarberId)
                     ? selectedBarberId
                     : null,
                 items: barbers.map((b) {

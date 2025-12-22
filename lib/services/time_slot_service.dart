@@ -223,8 +223,9 @@ class TimeSlotService {
         .where((booking) {
           if (booking.startAt == null) return false;
           // Ignore checks
-          if (booking.status == 'cancelled' || booking.status == 'no_show')
+          if (booking.status == 'cancelled' || booking.status == 'no_show') {
             return false;
+          }
 
           // Determine End Time
           DateTime bookingEnd;
