@@ -5,7 +5,7 @@ import 'package:walkinsalonapp/models/salon_model.dart';
 import 'package:walkinsalonapp/screens/customer/booking/payment_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:walkinsalonapp/auth/login/login_page.dart';
+import 'package:walkinsalonapp/widgets/auth/login_modal.dart';
 import 'package:walkinsalonapp/models/booking_model.dart';
 import 'package:walkinsalonapp/services/time_slot_service.dart';
 
@@ -413,28 +413,27 @@ class _BookingScreenState extends State<BookingScreen> {
                 onPressed: _selectedTime != null
                     ? () {
                         if (FirebaseAuth.instance.currentUser == null) {
-                          // Not logged in -> Show Login, then return
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => LoginPage(
-                                onLoginSuccess: () {
-                                  // 🎯 Login success!
-                                  Navigator.pop(context); // Close Login Page
-                                  // Now user is back on BookingScreen, but logged in
-                                  // We can optionally auto-advance, but let's let them click Continue again
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        'Login successful! You can now proceed.',
-                                      ),
-                                      duration: Duration(seconds: 2),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          );
+                          // Not logged in -> Show Login Modal
+                          showDialog(
+                            context: context,
+                            barrierColor: Colors.black.withValues(alpha: 0.8),
+                            builder: (context) =>
+                                const LoginModal(fromIntro: false),
+                          ).then((_) {
+                            // After modal closes, check if user logged in
+                            if (FirebaseAuth.instance.currentUser != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Login successful! You can now proceed.',
+                                  ),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                              // Trigger a rebuild to enable the button
+                              setState(() {});
+                            }
+                          });
                         } else {
                           // Allow booking
                           Navigator.push(

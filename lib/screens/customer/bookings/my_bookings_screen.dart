@@ -1,17 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:walkinsalonapp/providers/auth_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:walkinsalonapp/models/booking_model.dart';
-import 'package:walkinsalonapp/auth/login/login_page.dart';
+import 'package:walkinsalonapp/widgets/auth/login_modal.dart';
 import 'package:walkinsalonapp/widgets/review/review_dialog.dart';
 
-class MyBookingsScreen extends StatelessWidget {
+class MyBookingsScreen extends ConsumerWidget {
   const MyBookingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // 🔍 Watch auth state
+    ref.watch(authStateProvider);
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {
@@ -33,9 +37,10 @@ class MyBookingsScreen extends StatelessWidget {
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                  showDialog(
+                    context: context,
+                    barrierColor: Colors.black.withValues(alpha: 0.8),
+                    builder: (context) => const LoginModal(),
                   );
                 },
                 child: const Text("Login"),

@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:walkinsalonapp/services/customer_auth_service.dart';
 import 'package:walkinsalonapp/models/customer_model.dart';
-import 'package:walkinsalonapp/auth/login/login_page.dart';
+import 'package:walkinsalonapp/screens/intro/intro_page.dart';
+import 'package:walkinsalonapp/providers/auth_provider.dart';
 
-class CustomerProfileScreen extends StatefulWidget {
+class CustomerProfileScreen extends ConsumerStatefulWidget {
   const CustomerProfileScreen({super.key});
 
   @override
-  State<CustomerProfileScreen> createState() => _CustomerProfileScreenState();
+  ConsumerState<CustomerProfileScreen> createState() =>
+      _CustomerProfileScreenState();
 }
 
-class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
+class _CustomerProfileScreenState extends ConsumerState<CustomerProfileScreen> {
   final _authService = CustomerAuthService();
   CustomerModel? _customer;
   bool _isLoading = true;
@@ -57,7 +60,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
       await _authService.signOut();
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const LoginPage()),
+          MaterialPageRoute(builder: (_) => const IntroPage()),
           (route) => false,
         );
       }
@@ -66,6 +69,11 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 🔍 Listen to auth state changes to reload profile
+    ref.listen(authStateProvider, (previous, next) {
+      _loadProfile();
+    });
+
     final colors = Theme.of(context).colorScheme;
 
     if (_isLoading) {

@@ -2,11 +2,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:walkinsalonapp/utils/error_handler.dart';
+import 'package:google_sign_in/google_sign_in.dart' as gsi;
 import 'package:walkinsalonapp/models/customer_model.dart';
 
 class CustomerAuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final gsi.GoogleSignIn _googleSignIn = gsi.GoogleSignIn();
 
   /// Get current user
   User? get currentUser => _auth.currentUser;
@@ -122,6 +124,89 @@ class CustomerAuthService {
       return {
         'success': false,
         'message': ErrorHandler.handleError(e, context: 'loginCustomer'),
+      };
+    }
+  }
+
+  /// Sign in with Google
+  Future<Map<String, dynamic>> signInWithGoogle() async {
+    try {
+      User? user;
+
+      if (kIsWeb) {
+        debugPrint('WEB: Starting signInWithPopup...');
+        // Web: Use signInWithPopup
+        final UserCredential userCredential = await _auth.signInWithPopup(
+          GoogleAuthProvider(),
+        );
+        debugPrint(
+          'WEB: signInWithPopup completed. User: ${userCredential.user?.uid}',
+        );
+        user = userCredential.user;
+      } else {
+        // Mobile: Use native flow
+        final gsi.GoogleSignInAccount? googleUser = await _googleSignIn
+            .signIn();
+
+        if (googleUser == null) {
+          return {'success': false, 'message': 'Sign in cancelled by user'};
+        }
+
+        final gsi.GoogleSignInAuthentication googleAuth =
+            await googleUser.authentication;
+
+        final OAuthCredential credential = GoogleAuthProvider.credential(
+          idToken: googleAuth.idToken,
+          accessToken: googleAuth.accessToken,
+        );
+
+        final UserCredential userCredential = await _auth.signInWithCredential(
+          credential,
+        );
+        user = userCredential.user;
+      }
+
+      if (user == null) {
+        return {'success': false, 'message': 'Authentication failed'};
+      }
+
+      final uid = user.uid;
+
+      // Check if user exists in Firestore
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+
+      if (!userDoc.exists) {
+        // Create new customer account
+        await _firestore.collection('users').doc(uid).set({
+          'email': user.email!.toLowerCase(),
+          'name': user.displayName ?? 'New User',
+          'phoneNumber': user.phoneNumber,
+          'role': 'customer', // Default to customer
+          'emailVerified': true, // Google accounts are verified
+          'profileImage': user.photoURL,
+          'favoriteSalons': [],
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+      // Note: Existing logic for checking role is omitted here as we want to allow login
+      // regardless of role here (or at least not block it inside the service for now).
+      // The AuthWrapper handles the navigation based on actual role.
+
+      debugPrint('Google Sign-In successful: $uid');
+      return {
+        'success': true,
+        'uid': uid,
+        'message': 'Google Sign-In successful!',
+      };
+    } on FirebaseAuthException catch (e) {
+      ErrorHandler.logError(e, StackTrace.current, context: 'signInWithGoogle');
+      return {'success': false, 'message': ErrorHandler.getAuthErrorMessage(e)};
+    } catch (e) {
+      ErrorHandler.logError(e, StackTrace.current, context: 'signInWithGoogle');
+      return {
+        'success': false,
+        'message': ErrorHandler.handleError(e, context: 'signInWithGoogle'),
       };
     }
   }
@@ -297,6 +382,7 @@ class CustomerAuthService {
   /// Sign out
   Future<void> signOut() async {
     try {
+      await _googleSignIn.signOut();
       await _auth.signOut();
       debugPrint('Customer signed out');
     } catch (e) {

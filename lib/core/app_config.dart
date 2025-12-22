@@ -222,14 +222,22 @@ class AppTextTheme {
 /// =======================================================
 class AppImages {
   static const String logo = 'lib/assets/images/logo.png';
+  static const String logoGold = 'lib/assets/images/loader.jpg';
   static const String loginBackground =
       'lib/assets/images/login_background.png';
+  static const String salonHeroBg = 'lib/assets/images/salon_hero_bg.png';
+  static const String featureBooking =
+      'lib/assets/images/feature_booking_time.png';
+  static const String featureStylist = 'lib/assets/images/feature_stylist.png';
+  static const String featurePersonalCare =
+      'lib/assets/images/feature_personal_care.png';
+  static const String featureAmbience =
+      'lib/assets/images/feature_ambience.png';
+  static const String featureHygiene = 'lib/assets/images/feature_hygiene.png';
+
   final String placeholder = 'lib/assets/images/placeholder.png';
   final String defaultProfile = 'lib/assets/images/default_profile.jpg';
   final String defaultCover = 'lib/assets/images/default_cover.jpg';
-  final String onboarding1 = 'lib/assets/images/onboarding1.png';
-  final String onboarding2 = 'lib/assets/images/onboarding2.png';
-  final String onboarding3 = 'lib/assets/images/onboarding3.png';
 }
 
 /// =======================================================

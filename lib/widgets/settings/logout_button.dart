@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 
-import 'package:walkinsalonapp/auth/login/login_page.dart';
+import 'package:walkinsalonapp/screens/intro/intro_page.dart';
 import 'package:walkinsalonapp/providers/auth_provider.dart';
 
 class LogoutButton extends ConsumerWidget {
@@ -32,7 +32,7 @@ class LogoutButton extends ConsumerWidget {
       await ref.read(authServiceProvider).signOut();
       if (context.mounted) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const LoginPage()),
+          MaterialPageRoute(builder: (_) => const IntroPage()),
           (route) => false,
         );
       }

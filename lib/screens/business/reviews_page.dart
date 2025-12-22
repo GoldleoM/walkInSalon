@@ -5,6 +5,7 @@ import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:walkinsalonapp/widgets/reviews/review_card.dart';
 import 'package:walkinsalonapp/widgets/dialogs/reviews/reply_dialog.dart';
 import 'package:walkinsalonapp/services/database_seeder.dart';
+import 'package:walkinsalonapp/widgets/custom_loader.dart';
 
 class ReviewsPage extends StatefulWidget {
   const ReviewsPage({super.key});
@@ -101,7 +102,7 @@ class _ReviewsPageState extends State<ReviewsPage> {
     if (_isLoading) {
       return Scaffold(
         backgroundColor: colors.surface,
-        body: const Center(child: CircularProgressIndicator()),
+        body: const Center(child: CustomLoader(size: 80, isOverlay: false)),
       );
     }
 

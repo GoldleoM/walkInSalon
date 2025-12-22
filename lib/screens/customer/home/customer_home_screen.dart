@@ -2,26 +2,29 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:walkinsalonapp/providers/auth_provider.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
 import 'package:walkinsalonapp/models/salon_model.dart';
 import 'package:walkinsalonapp/screens/customer/home/location_selection_screen.dart';
-import 'package:walkinsalonapp/auth/login/login_page.dart';
+import 'package:walkinsalonapp/widgets/auth/login_modal.dart';
 import 'package:walkinsalonapp/screens/customer/home/widgets/salon_card.dart';
 import 'package:walkinsalonapp/screens/customer/salon/salon_details_screen.dart';
 import 'package:walkinsalonapp/screens/customer/bookings/my_bookings_screen.dart';
 import 'package:walkinsalonapp/screens/customer/profile/customer_profile_screen.dart';
 import 'package:walkinsalonapp/screens/customer/explore/explore_screen.dart';
 import 'package:walkinsalonapp/services/location_service.dart';
+import 'package:walkinsalonapp/widgets/custom_loader.dart';
 
-class CustomerHomeScreen extends StatefulWidget {
+class CustomerHomeScreen extends ConsumerStatefulWidget {
   const CustomerHomeScreen({super.key});
 
   @override
-  State<CustomerHomeScreen> createState() => _CustomerHomeScreenState();
+  ConsumerState<CustomerHomeScreen> createState() => _CustomerHomeScreenState();
 }
 
-class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
+class _CustomerHomeScreenState extends ConsumerState<CustomerHomeScreen> {
   int _currentIndex = 0;
   final List<Widget> _screens = const [
     CustomerHomeContent(),
@@ -32,6 +35,9 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 🔍 Watch auth state to trigger rebuild on login/logout
+    ref.watch(authStateProvider);
+
     return Scaffold(
       body: _screens[_currentIndex],
       bottomNavigationBar: NavigationBar(
@@ -68,14 +74,15 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   }
 }
 
-class CustomerHomeContent extends StatefulWidget {
+class CustomerHomeContent extends ConsumerStatefulWidget {
   const CustomerHomeContent({super.key});
 
   @override
-  State<CustomerHomeContent> createState() => _CustomerHomeContentState();
+  ConsumerState<CustomerHomeContent> createState() =>
+      _CustomerHomeContentState();
 }
 
-class _CustomerHomeContentState extends State<CustomerHomeContent> {
+class _CustomerHomeContentState extends ConsumerState<CustomerHomeContent> {
   final TextEditingController _searchController = TextEditingController();
   final LocationService _locationService = LocationService();
   String _searchQuery = '';
@@ -230,6 +237,9 @@ class _CustomerHomeContentState extends State<CustomerHomeContent> {
 
   @override
   Widget build(BuildContext context) {
+    // 🔍 Watch auth state
+    ref.watch(authStateProvider);
+
     // 1. Trending: Most bookings
     final trendingSalons = List<SalonModel>.from(_allSalons)
       ..sort((a, b) => b.lifetimeBookings.compareTo(a.lifetimeBookings));
@@ -287,9 +297,10 @@ class _CustomerHomeContentState extends State<CustomerHomeContent> {
           else
             TextButton(
               onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                showDialog(
+                  context: context,
+                  barrierColor: Colors.black.withValues(alpha: 0.8),
+                  builder: (context) => const LoginModal(),
                 );
               },
               child: const Text('Login'),
@@ -422,7 +433,7 @@ class _CustomerHomeContentState extends State<CustomerHomeContent> {
             ),
             const SizedBox(height: 12),
             _isLoading
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CustomLoader(size: 60, isOverlay: false))
                 : _filteredSalons.isEmpty
                 ? Center(
                     child: Column(

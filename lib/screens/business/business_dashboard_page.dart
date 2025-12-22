@@ -6,7 +6,7 @@ import 'package:walkinsalonapp/screens/business/appointments_page.dart';
 import 'package:walkinsalonapp/screens/business/barber_management_page.dart';
 import 'package:walkinsalonapp/screens/business/business_more_screen.dart';
 import 'package:walkinsalonapp/widgets/dashboard/dashboard_body.dart';
-import 'package:walkinsalonapp/auth/login/login_page.dart';
+import 'package:walkinsalonapp/screens/intro/intro_page.dart';
 
 // ✅ Tab State (Optional: Keep alive or auto-dispose)
 class DashboardTabNotifier extends Notifier<int> {
@@ -71,7 +71,7 @@ class BusinessDashboardPage extends ConsumerWidget {
                       await FirebaseAuth.instance.signOut();
                       if (context.mounted) {
                         Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(builder: (_) => const LoginPage()),
+                          MaterialPageRoute(builder: (_) => const IntroPage()),
                           (route) => false,
                         );
                       }

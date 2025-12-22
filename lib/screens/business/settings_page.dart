@@ -18,6 +18,7 @@ import 'package:google_fonts/google_fonts.dart'; // Ensure font consistency
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:walkinsalonapp/providers/image_upload_provider.dart';
+import 'package:walkinsalonapp/widgets/custom_loader.dart';
 
 class BusinessSettingsPage extends ConsumerStatefulWidget {
   const BusinessSettingsPage({super.key});
@@ -76,8 +77,13 @@ class _BusinessSettingsPageState extends ConsumerState<BusinessSettingsPage> {
         final version = (business['imageVersion'] ?? '').toString();
         final logo = business['profileImage'] ?? '';
         final cover = business['coverImage'] ?? '';
-        logoUrl = logo.isNotEmpty ? '$logo?v=$version' : null;
-        coverUrl = cover.isNotEmpty ? '$cover?v=$version' : null;
+
+        logoUrl = logo.isNotEmpty
+            ? '$logo${logo.contains('?') ? '&' : '?'}v=$version'
+            : null;
+        coverUrl = cover.isNotEmpty
+            ? '$cover${cover.contains('?') ? '&' : '?'}v=$version'
+            : null;
 
         final lat = business['latitude'];
         final lng = business['longitude'];
@@ -180,11 +186,13 @@ class _BusinessSettingsPageState extends ConsumerState<BusinessSettingsPage> {
       if (!mounted) return;
       setState(() {
         if (uploadedLogo != null) {
-          logoUrl = '$uploadedLogo?v=$newVersion';
+          logoUrl =
+              '$uploadedLogo${uploadedLogo.contains('?') ? '&' : '?'}v=$newVersion';
           logoBytes = null;
         }
         if (uploadedCover != null) {
-          coverUrl = '$uploadedCover?v=$newVersion';
+          coverUrl =
+              '$uploadedCover${uploadedCover.contains('?') ? '&' : '?'}v=$newVersion';
           coverBytes = null;
         }
       });
@@ -215,7 +223,9 @@ class _BusinessSettingsPageState extends ConsumerState<BusinessSettingsPage> {
     final isDark = theme.brightness == Brightness.dark;
 
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(
+        body: Center(child: CustomLoader(size: 80, isOverlay: false)),
+      );
     }
 
     return Scaffold(
@@ -359,7 +369,7 @@ class _BusinessSettingsPageState extends ConsumerState<BusinessSettingsPage> {
             Container(
               color: Colors.black38,
               child: const Center(
-                child: CircularProgressIndicator(color: Colors.white),
+                child: CustomLoader(size: 60, isOverlay: true),
               ),
             ),
         ],

@@ -5,7 +5,7 @@ import 'package:walkinsalonapp/models/salon_model.dart';
 import 'package:walkinsalonapp/screens/customer/salon/widgets/barber_selector.dart';
 import 'package:walkinsalonapp/screens/customer/salon/widgets/service_list.dart';
 import 'package:walkinsalonapp/screens/customer/booking/booking_screen.dart';
-import 'package:walkinsalonapp/auth/login/login_page.dart';
+import 'package:walkinsalonapp/widgets/auth/login_modal.dart';
 
 class SalonDetailsScreen extends StatelessWidget {
   final SalonModel salon;
@@ -257,9 +257,10 @@ class SalonDetailsScreen extends StatelessWidget {
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context); // Close dialog
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
+                showDialog(
+                  context: context,
+                  barrierColor: Colors.black.withValues(alpha: 0.8),
+                  builder: (context) => const LoginModal(fromIntro: false),
                 );
               },
               child: const Text("Log In / Sign Up"),

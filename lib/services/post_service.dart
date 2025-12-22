@@ -11,7 +11,7 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:path/path.dart' as p;
 import 'package:walkinsalonapp/models/post_model.dart';
 import 'package:walkinsalonapp/models/comment_model.dart';
-import 'package:walkinsalonapp/models/salon_model.dart'; // Assuming we might need this or just string ref
+// Assuming we might need this or just string ref
 // import 'package:walkinsalonapp/services/image_upload_service.dart'; // Using Supabase directly
 
 class PostService {

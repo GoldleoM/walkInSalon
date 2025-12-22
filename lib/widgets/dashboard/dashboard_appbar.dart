@@ -207,7 +207,7 @@ class _DashboardAppBarState extends State<DashboardAppBar> {
     }
 
     final bustedUrl = _profileImage != null && _profileImage!.isNotEmpty
-        ? '${_profileImage!}?v=$_imageVersion'
+        ? '$_profileImage${_profileImage!.contains('?') ? '&' : '?'}v=$_imageVersion'
         : null;
 
     return RepaintBoundary(

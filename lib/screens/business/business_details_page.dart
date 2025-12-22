@@ -10,7 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:walkinsalonapp/core/app_config.dart';
-import 'package:walkinsalonapp/auth/login/login_page.dart';
+
 import 'package:walkinsalonapp/providers/business_provider.dart'; // Provider
 import 'package:walkinsalonapp/providers/image_upload_provider.dart'; // Provider
 import 'package:walkinsalonapp/screens/business/business_dashboard_page.dart';
@@ -22,6 +22,7 @@ import 'package:walkinsalonapp/widgets/dashboard/barber_dashboard_card.dart';
 import 'package:walkinsalonapp/widgets/dialogs/settings/location_picker_dialog.dart';
 import 'package:walkinsalonapp/widgets/dialogs/services/add_service_dialog.dart';
 import 'package:walkinsalonapp/widgets/dashboard/service_list_item.dart';
+import 'package:walkinsalonapp/widgets/custom_loader.dart';
 
 final supabase = Supabase.instance.client;
 final _uuid = const Uuid();
@@ -472,9 +473,9 @@ class _BusinessDetailsPageState extends ConsumerState<BusinessDetailsPage> {
                                 ? const SizedBox(
                                     height: 22,
                                     width: 22,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2,
+                                    child: CustomLoader(
+                                      size: 22,
+                                      isOverlay: false,
                                     ),
                                   )
                                 : const Text(
@@ -492,12 +493,17 @@ class _BusinessDetailsPageState extends ConsumerState<BusinessDetailsPage> {
                           child: OutlinedButton(
                             onPressed: _isSaving
                                 ? null
-                                : () => Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const LoginPage(),
-                                    ),
-                                  ),
+                                : () async {
+                                    // Log out the user
+                                    await FirebaseAuth.instance.signOut();
+                                    if (!mounted) return;
+                                    // Navigate to intro page and clear stack
+                                    Navigator.pushNamedAndRemoveUntil(
+                                      context,
+                                      '/',
+                                      (route) => false,
+                                    );
+                                  },
                             style: OutlinedButton.styleFrom(
                               foregroundColor: colors.onSurface,
                               side: BorderSide(

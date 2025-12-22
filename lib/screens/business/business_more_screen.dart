@@ -8,7 +8,6 @@ import 'package:walkinsalonapp/screens/business/settings_page.dart';
 import 'package:walkinsalonapp/screens/business/discounts_page.dart';
 import 'package:walkinsalonapp/screens/business/analytics_page.dart';
 import 'package:walkinsalonapp/screens/business/create_post_screen.dart';
-import 'package:walkinsalonapp/auth/login/login_page.dart';
 
 class BusinessMoreScreen extends StatelessWidget {
   const BusinessMoreScreen({super.key});
@@ -193,8 +192,8 @@ class BusinessMoreScreen extends StatelessWidget {
               if (confirm == true) {
                 await FirebaseAuth.instance.signOut();
                 if (context.mounted) {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/', // Navigate to intro page
                     (route) => false,
                   );
                 }
